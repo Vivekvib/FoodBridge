@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-3 fw-bold">Zero Hunger. Zero Waste.</h1>
+        <p class="lead mb-5">FoodBridge connects surplus food from local businesses to communities in need instantly.</p>
+        <div class="d-flex justify-content-center gap-3">
+             <a href="{{ url_for('donor') }}" class="btn btn-light btn-lg px-5 fw-bold">Donate Food</a>
+            <a href="{{ url_for('ngo') }}" class="btn btn-outline-light btn-lg px-5 fw-bold">Find Food</a>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="p-4 shadow-sm rounded bg-white h-100">
+                <h3>🚀 Real-Time</h3>
+                <p class="text-muted">Donations appear instantly for NGOs nearby.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 shadow-sm rounded bg-white h-100">
+                <h3>🛡️ Verified</h3>
+                <p class="text-muted">Trusted network of registered donors and shelters.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 shadow-sm rounded bg-white h-100">
+                <h3>🌍 Sustainable</h3>
+                <p class="text-muted">Reducing landfill methane by redirecting food.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

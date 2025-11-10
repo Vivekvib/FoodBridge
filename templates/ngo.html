@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h2 class="fw-bold text-success">📍 Live Donation Feed</h2>
+        </div>
+        <div class="col-md-6">
+            <input type="text" id="donationSearch" class="form-control form-control-lg" placeholder="🔍 Filter by food item or restaurant...">
+        </div>
+    </div>
+
+    {% if not donations %}
+        <div class="alert alert-info p-4 text-center">
+            <h4>No active donations at the moment.</h4>
+            <p>Please check back later or refresh the page.</p>
+        </div>
+    {% else %}
+        <div class="row" id="donationGrid">
+            {% for donation in donations %}
+            <div class="col-md-6 mb-4 donation-col">
+                <div class="card h-100 shadow-sm donation-card">
+                    <div class="card-header bg-transparent fw-bold text-success d-flex justify-content-between">
+                       <span>🏢 {{ donation['org_name'] }}</span>
+                       <small class="text-muted">#{{ donation['id'] }}</small>
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ donation['food_item'] }}</h4>
+                        <div class="mb-3">
+                            <span class="badge bg-secondary fs-6">📦 {{ donation['quantity'] }}</span>
+                        </div>
+                        <p class="card-text mb-1">
+                            <strong>Pickup Deadline:</strong><br>
+                            {{ donation['expiry_datetime'].replace('T', ' at ') }}
+                        </p>
+                        <div class="mb-3">
+                             <span class="countdown-timer" data-expiry="{{ donation['expiry_datetime'] | replace(' ', 'T') }}">
+                                Calculating...
+                            </span>
+                        </div>
+                        <form action="{{ url_for('claim', id=donation['id']) }}" method="POST">
+                            <button type="submit" class="btn btn-success w-100 btn-claim">Claim Donation Now</button>
+                        </form>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        Posted: {{ donation['created_at'] }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <hr class="my-5">
+    <h3 class="text-primary mb-4">🎒 My Claimed Donations (Click to Chat)</h3>
+    <div class="row">
+        {% for claim in my_claims %}
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ claim['food_item'] }}</h5>
+                    <p class="card-text small text-muted">
+                        From: {{ claim['org_name'] }}<br>
+                        Claimed on: {{ claim['created_at'] }}
+                    </p>
+                    <a href="{{ url_for('chat', donation_id=claim['id']) }}" class="btn btn-primary w-100">
+                        💬 Open Chat with Donor
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <p class="text-muted p-3 bg-light rounded">You haven't claimed any donations yet. Once you do, they will appear here for coordination.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

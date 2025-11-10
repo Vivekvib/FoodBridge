@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-success text-white">📦 Donation Details</div>
+            <div class="card-body">
+                <h5>{{ donation['food_item'] }}</h5>
+                <p><strong>Qty:</strong> {{ donation['quantity'] }}</p>
+                <p><strong>Status:</strong> <span class="badge bg-primary">{{ donation['status'] }}</span></p>
+                <hr>
+                <small class="text-muted">Use the chat to coordinate pickup times and location details securely.</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow" style="height: 70vh;">
+            <div class="card-header bg-white fw-bold">
+                💬 Coordination Chat
+            </div>
+            <div class="card-body overflow-auto" style="background: #f8f9fa;">
+                {% for msg in messages %}
+                    <div class="d-flex flex-column mb-2 {% if msg['sender_id'] == session['user_id'] %}align-items-end{% else %}align-items-start{% endif %}">
+                        <div class="p-2 rounded shadow-sm" 
+                             style="max-width: 70%; background: {% if msg['sender_id'] == session['user_id'] %}#dcf8c6{% else %}#ffffff{% endif %};">
+                            <small class="fw-bold text-success">{{ msg['username'] }}</small>
+                            <div>{{ msg['text'] }}</div>
+                             <small class="text-muted" style="font-size: 0.7em;">{{ msg['created_at'][-8:-3] }}</small>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted mt-5">No messages yet. Start coordinating!</p>
+                {% endfor %}
+            </div>
+            <div class="card-footer bg-white">
+                <form method="POST" class="d-flex gap-2">
+                    <input type="text" name="message" class="form-control" placeholder="Type your message..." required autocomplete="off">
+                    <button type="submit" class="btn btn-success">Send ➤</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Auto-scroll to bottom of chat
+    const chatBody = document.querySelector('.card-body.overflow-auto');
+    chatBody.scrollTop = chatBody.scrollHeight;
+</script>
+{% endblock %}
