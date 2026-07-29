@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20)
 );
 
-CREATE TABLE donations (
+CREATE TABLE IF NOT EXISTS donations (
     id SERIAL PRIMARY KEY,
     donor_id INTEGER NOT NULL,
     org_name VARCHAR(100) NOT NULL,
@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
--- DUMMY DATA
+-- DUMMY DATA (Safe against duplicate key crashes on restart)
 INSERT INTO users (username, password, role, phone) VALUES 
 ('demodonor', 'scrypt:32768:8:1$lP7t9X8a9b8c$e8d9c0...', 'donor', '9876543210'),
-('demongo', 'scrypt:32768:8:1$lP7t9X8a9b8c$e8d9c0...', 'ngo', '1234567890');
+('demongo', 'scrypt:32768:8:1$lP7t9X8a9b8c$e8d9c0...', 'ngo', '1234567890')
+ON CONFLICT (username) DO NOTHING;

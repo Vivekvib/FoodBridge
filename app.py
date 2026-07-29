@@ -40,20 +40,22 @@ def init_db():
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS packaging_note VARCHAR(100) DEFAULT 'Not specified';",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS address TEXT DEFAULT 'Address not provided';",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION NULL;",
-        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION NULL;"
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION NULL;",
+        # Safely convert quantity to INTEGER if it was previously VARCHAR/TEXT
+        "ALTER TABLE donations ALTER COLUMN quantity TYPE INTEGER USING (COALESCE(NULLIF(REGEXP_REPLACE(quantity::text, '[^0-9]', '', 'g'), ''), '0')::integer);"
     ]
     
     for q in alter_queries:
         try:
             cursor.execute(q)
             conn.commit()
-        except Exception as e:
-            # Rollback the transaction block if a specific ALTER fails so the loop can continue
+        except Exception:
+            # Rollback transaction block if a specific ALTER fails so the loop continues
             conn.rollback()
             
     cursor.close()
     conn.close()
-    
+
 def execute_query(query, params=(), fetchone=False, fetchall=False, commit=False, return_id=False):
     """
     Helper function to abstract SQL query execution across SQLite and PostgreSQL.
@@ -215,11 +217,11 @@ def donor():
         flash("Donation listed live with structured logistics data! 🚀", "success")
         return redirect(url_for('donor'))
 
-    # GET request: fetch existing donations for this donor
+    # GET request: fetch existing donations for this donor (FIXED: fetchall=True)
     my_donations = execute_query(
         "SELECT * FROM donations WHERE donor_id = ? ORDER BY id DESC",
         (session['user_id'],),
-        fetch=True
+        fetchall=True
     )
     return render_template('donor.html', my_donations=my_donations)
 
