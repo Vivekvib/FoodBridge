@@ -28,7 +28,20 @@ def init_db():
 
     conn = get_db()
     cursor = conn.cursor()
-    
+    alter_queries = [
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'Cooked Veg';",
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS unit VARCHAR(30) DEFAULT 'Servings';",
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS packaging_note VARCHAR(100) DEFAULT 'Not specified';",
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS address TEXT DEFAULT 'Address not provided';",
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION NULL;",
+        "ALTER TABLE donations ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION NULL;"
+    ]
+    for q in alter_queries:
+        try:
+            execute_query(q, commit=True)
+        except Exception:
+            pass
+        
     # psycopg2 executes multi-statement SQL strings seamlessly
     cursor.execute(schema_sql)
     conn.commit()
