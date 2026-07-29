@@ -139,34 +139,69 @@ def index():
 @app.route('/donor', methods=['GET', 'POST'])
 @login_required
 def donor():
-    if session['role'] != 'donor': 
-        flash("Access Denied: You are logged in as an NGO.", "warning")
+    if session.get('role') != 'donor':
+        flash("Unauthorized access.", "danger")
         return redirect(url_for('index'))
-        
+
     if request.method == 'POST':
-        new_donation_id = execute_query(
-            'INSERT INTO donations (donor_id, org_name, food_item, quantity, expiry_datetime) VALUES (?, ?, ?, ?, ?)',
-            (session['user_id'], request.form['org_name'], request.form['food_item'], request.form['quantity'], request.form['expiry']),
-            commit=True,
-            return_id=True
+        # Grab structured form fields
+        org_name = request.form.get('org_name')
+        food_item = request.form.get('food_item')
+        category = request.form.get('category', 'Cooked Veg')
+        
+        # Ensure quantity is stored as a clean integer
+        try:
+            quantity = int(request.form.get('quantity', 0))
+        except ValueError:
+            quantity = 0
+            
+        unit = request.form.get('unit', 'Servings')
+        packaging_note = request.form.get('packaging_note', 'Not specified')
+        address = request.form.get('address', 'Address not provided')
+        expiry = request.form.get('expiry')
+        
+        # Optional GPS coordinates from hidden form fields
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        lat_val = float(latitude) if latitude and latitude.strip() else None
+        lng_val = float(longitude) if longitude and longitude.strip() else None
+
+        if quantity <= 0:
+            flash("Please enter a valid quantity greater than 0.", "warning")
+            return redirect(url_for('donor'))
+
+        # Insert new structured listing into database
+        insert_query = """
+            INSERT INTO donations 
+            (donor_id, org_name, food_item, category, quantity, unit, packaging_note, address, latitude, longitude, expiry_datetime, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+        """
+        execute_query(
+            insert_query,
+            (
+                session['user_id'],
+                org_name,
+                food_item,
+                category,
+                quantity,
+                unit,
+                packaging_note,
+                address,
+                lat_val,
+                lng_val,
+                expiry
+            ),
+            commit=True
         )
-        
-        # NOTIFY ALL NGOs about new donation
-        ngos = execute_query("SELECT id FROM users WHERE role = 'ngo'", fetchall=True)
-        for ngo in ngos:
-            msg = f"New Donation Alert: {request.form['food_item']} from {request.form['org_name']}"
-            execute_query(
-                'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-                (ngo['id'], msg, 'new_donation', new_donation_id),
-                commit=True
-            )
-        
-        flash('Donation listed! NGOs have been notified.', 'success')
-        
+
+        flash("Donation listed live with structured logistics data! 🚀", "success")
+        return redirect(url_for('donor'))
+
+    # GET request: fetch existing donations for this donor
     my_donations = execute_query(
-        'SELECT * FROM donations WHERE donor_id = ? ORDER BY created_at DESC', 
-        (session['user_id'],), 
-        fetchall=True
+        "SELECT * FROM donations WHERE donor_id = ? ORDER BY id DESC",
+        (session['user_id'],),
+        fetch=True
     )
     return render_template('donor.html', my_donations=my_donations)
 
@@ -262,7 +297,7 @@ def delete_donation(donation_id):
     )
     flash("Active listing removed successfully.", "info")
     return redirect(url_for('donor'))
-
+    
 # --- NOTIFICATIONS & CHAT ---
 @app.route('/notifications')
 @login_required
