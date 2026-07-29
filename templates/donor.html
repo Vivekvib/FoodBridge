@@ -1,77 +1,132 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
-<div class="row">
-    <div class="col-md-5 mb-4">
-        <div class="card shadow border-0 sticky-top" style="top: 20px; z-index: 1;">
-            <div class="card-header bg-success text-white p-3">
-                <h4 class="mb-0">📦 Post New Donation</h4>
+<div class="row mt-3">
+  
+  <!-- LEFT COLUMN: Post New Donation Form -->
+  <div class="col-md-5 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white fw-bold">
+        📦 Post New Donation
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('donor') }}">
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Organization Name</label>
+            <input type="text" name="org_name" class="form-control" placeholder="e.g. {{ session.get('username') }}" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Food Description</label>
+            <input type="text" name="food_item" class="form-control" placeholder="e.g. 20 mixed sandwiches" required>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Quantity</label>
+              <input type="text" name="quantity" class="form-control" placeholder="e.g. 5 kg" required>
             </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Organization Name</label>
-                        <input type="text" name="org_name" class="form-control" required placeholder="e.g. Joe's Diner" value="{{ session.username }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Food Description</label>
-                        <input type="text" name="food_item" class="form-control" required placeholder="e.g. 20 mixed sandwiches">
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Quantity</label>
-                            <input type="text" name="quantity" class="form-control" required placeholder="e.g. 5 kg">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Pickup Deadline</label>
-                            <input type="datetime-local" name="expiry" class="form-control" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Publish Donation Live 🚀</button>
-                </form>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Pickup Deadline</label>
+              <input type="datetime-local" name="expiry" class="form-control" required>
             </div>
+          </div>
+          
+          <button type="submit" class="btn btn-success w-100 fw-bold">
+            Publish Donation Live 🚀
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Active Listings & Claimed History Log -->
+  <div class="col-md-7">
+    
+    <!-- 1. ACTIVE LISTINGS (Waiting to be claimed) -->
+    <h4 class="mb-3">🟢 Active Listings</h4>
+    
+    {% set active_count = namespace(val=0) %}
+    {% for d in my_donations %}
+      {% if d.status == 'Active' %}
+        {% set active_count.val = active_count.val + 1 %}
+        <div class="card mb-3 shadow-sm border-start border-success border-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="card-title text-success mb-1">{{ d.food_item }}</h5>
+                <small class="text-muted">
+                  Qty: {{ d.quantity }} | Expires: {{ d.expiry_datetime[:16] }}
+                </small>
+              </div>
+              <span class="badge bg-success">Active (Listed)</span>
+            </div>
+            
+            <hr class="my-2">
+            
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                Posted on: {{ (d.created_at | string)[:16] if d.created_at else '' }}
+              </small>
+              <button class="btn btn-outline-secondary btn-sm" disabled>
+                Wait for Claim to Chat
+              </button>
+            </div>
+          </div>
         </div>
+      {% endif %}
+    {% endfor %}
+    
+    {% if active_count.val == 0 %}
+      <div class="alert alert-light border text-center text-muted mb-4">
+        No active listings right now. Post a donation on the left!
+      </div>
+    {% endif %}
+
+    <!-- 2. CLAIMED DONATION HISTORY (Compact Log) -->
+    <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+      <h4 class="mb-0">📋 Claimed Donation History</h4>
+      
+      <!-- Counter Badge for Completed Donations -->
+      {% set claimed_count = namespace(val=0) %}
+      {% for d in my_donations %}
+        {% if d.status == 'Claimed' %}
+          {% set claimed_count.val = claimed_count.val + 1 %}
+        {% endif %}
+      {% endfor %}
+      <span class="badge bg-primary fs-6">Total Claimed: {{ claimed_count.val }}</span>
     </div>
 
-    <div class="col-md-7">
-        <h3 class="mb-4 text-secondary">📋 My Donation History</h3>
-        {% if not my_donations %}
-            <div class="alert alert-light border text-center p-5">
-                <h5>You haven't posted any donations yet.</h5>
-                <p class="text-muted">Fill out the form to make your first contribution!</p>
-            </div>
-        {% else %}
-            <div class="list-group shadow-sm">
-                {% for donation in my_donations %}
-                <div class="list-group-item p-3 mb-2 border rounded">
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <h5 class="mb-1 text-success">{{ donation['food_item'] }}</h5>
-                        
-                        {% if donation['status'] == 'Active' %}
-                            <span class="badge bg-success">Active (Listed)</span>
-                        {% elif donation['status'] == 'Claimed' %}
-                            <span class="badge bg-primary">Claimed</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ donation['status'] }}</span>
-                        {% endif %}
-                    </div>
-                    <p class="mb-1">Qty: {{ donation['quantity'] }} | Expires: {{ donation['expiry_datetime'].replace('T', ' at ') }}</p>
-                    
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <small class="text-muted">Posted on: {{ donation['created_at'] }}</small>
-                        
-                        {% if donation['status'] == 'Claimed' %}
-                            <a href="{{ url_for('chat', donation_id=donation['id']) }}" class="btn btn-sm btn-primary px-4">
-                                💬 Chat with NGO
-                            </a>
-                        {% else %}
-                            <button class="btn btn-sm btn-outline-secondary" disabled>Wait for Claim to Chat</button>
-                        {% endif %}
-                    </div>
+    {% if claimed_count.val > 0 %}
+      <div class="list-group shadow-sm mb-4">
+        {% for d in my_donations %}
+          {% if d.status == 'Claimed' %}
+            <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+              <!-- Item Details -->
+              <div class="me-3">
+                <div class="fw-bold text-dark">{{ d.food_item }}</div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                  Qty: {{ d.quantity }} &bull; Posted: {{ (d.created_at | string)[:16] if d.created_at else '' }}
                 </div>
-                {% endfor %}
+              </div>
+              
+              <!-- Actions -->
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-primary border">Claimed</span>
+                <a href="{{ url_for('chat', donation_id=d.id) }}" class="btn btn-primary btn-sm d-flex align-items-center">
+                  💬 Chat
+                </a>
+              </div>
             </div>
-        {% endif %}
-    </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-light border text-center text-muted">
+        No donations have been claimed yet.
+      </div>
+    {% endif %}
+
+  </div>
 </div>
 {% endblock %}
