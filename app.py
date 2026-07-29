@@ -110,7 +110,9 @@ def register():
             flash("Registration successful! Please log in.", "success")
             return redirect(url_for('login'))
         except Exception as e:
-            flash("Username already taken or invalid details.", "danger")
+            # THIS WILL SHOW THE ACTUAL ERROR INSTEAD OF MASKING IT
+            print(f"CRITICAL REGISTRATION ERROR: {e}")
+            flash(f"DEBUG ERROR: {e}", "danger")
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
