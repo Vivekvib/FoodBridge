@@ -24,7 +24,7 @@
 
           <!-- Safe timestamp formatting (first 16 chars: YYYY-MM-DD HH:MM) -->
           <small class="text-muted">
-            {{ notif.created_at[:16] if notif.created_at else '' }}
+            {{ (notif.created_at | string)[:16] if notif.created_at else '' }}
           </small>
         </a>
       {% endfor %}

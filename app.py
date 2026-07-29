@@ -225,7 +225,18 @@ def notifications():
         (session['user_id'],), 
         fetchall=True
     )
-    return render_template('notifications.html', notifs=notifs)
+    
+    # Safely convert datetime timestamps to strings for Jinja rendering
+    safe_notifs = []
+    if notifs:
+        for n in notifs:
+            n_dict = dict(n)
+            if 'created_at' in n_dict and n_dict['created_at'] is not None:
+                n_dict['created_at'] = str(n_dict['created_at'])
+            safe_notifs.append(n_dict)
+            
+    return render_template('notifications.html', notifs=safe_notifs)
+
 
 @app.route('/notification/read/<int:notif_id>')
 @login_required
