@@ -263,7 +263,11 @@ def chat(donation_id):
     if not donation:
         flash("Donation not found.", "danger")
         return redirect(url_for('index'))
-        
+
+    execute_query(
+        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND related_id = ? AND type = 'chat'",
+        (session['user_id'], donation_id),
+        commit=True)
     if request.method == 'POST':
         try:
             # Safely grab message text whether input name is 'message' or 'text'
@@ -329,6 +333,17 @@ with app.app_context():
         print("Database schema initialized successfully on startup.")
     except Exception as e:
         print(f"Startup DB init log/warning: {e}")
+
+@app.route('/api/notifications/count')
+@login_required
+def api_notif_count():
+    row = execute_query(
+        'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0', 
+        (session['user_id'],), 
+        fetchone=True
+    )
+    count = row['count'] if row else 0
+    return {'count': count}
 
 if __name__ == '__main__':
     app.run(debug=True)
