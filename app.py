@@ -23,23 +23,19 @@ def get_db():
         return conn
 
 def init_db():
-    """Initializes tables from schema.sql for both SQLite and PostgreSQL."""
+    with open('schema.sql', 'r') as f:
+        schema_sql = f.read()
+
     conn = get_db()
     cursor = conn.cursor()
     
-    with open('schema.sql', mode='r') as f:
-        schema_sql = f.read()
-        
-    if DATABASE_URL:
-        cursor.execute(schema_sql)
-    else:
-        cursor.executescript(schema_sql)
-        
+    # psycopg2 executes multi-statement SQL strings seamlessly
+    cursor.execute(schema_sql)
     conn.commit()
+    
     cursor.close()
     conn.close()
-    print("Database Initialized Successfully.")
-
+    
 def execute_query(query, params=(), fetchone=False, fetchall=False, commit=False, return_id=False):
     """
     Helper function to abstract SQL query execution across SQLite and PostgreSQL.
@@ -110,7 +106,6 @@ def register():
             flash("Registration successful! Please log in.", "success")
             return redirect(url_for('login'))
         except Exception as e:
-            # THIS WILL SHOW THE ACTUAL ERROR INSTEAD OF MASKING IT
             print(f"CRITICAL REGISTRATION ERROR: {e}")
             flash(f"DEBUG ERROR: {e}", "danger")
     return render_template('register.html')
@@ -182,7 +177,6 @@ def ngo():
         flash("Access Denied: You are logged in as a Donor.", "warning")
         return redirect(url_for('index'))
         
-    # Note: Single quotes used for 'Active' string literal for ANSI SQL compliance
     donations = execute_query(
         "SELECT * FROM donations WHERE status = 'Active' ORDER BY created_at DESC", 
         fetchall=True
@@ -295,8 +289,14 @@ def force_init_db():
         return "Database tables created successfully!"
     except Exception as e:
         return f"Error initializing database: {e}"
-    
-if __name__ == '__main__':
-    with app.app_context():
+
+# --- AUTOMATIC TABLE INITIALIZATION ON GUNICORN/FLASK STARTUP ---
+with app.app_context():
+    try:
         init_db()
+        print("Database schema initialized successfully on startup.")
+    except Exception as e:
+        print(f"Startup DB init log/warning: {e}")
+
+if __name__ == '__main__':
     app.run(debug=True)

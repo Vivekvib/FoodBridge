@@ -1,50 +1,50 @@
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS donations;
-DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS donations;
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL,
-    phone TEXT
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    phone VARCHAR(20)
 );
 
 CREATE TABLE donations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     donor_id INTEGER NOT NULL,
-    org_name TEXT NOT NULL,
-    food_item TEXT NOT NULL,
-    quantity TEXT NOT NULL,
-    expiry_datetime TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'Active',
+    org_name VARCHAR(255) NOT NULL,
+    food_item VARCHAR(255) NOT NULL,
+    quantity VARCHAR(100) NOT NULL,
+    expiry_datetime VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Active',
     claimed_by INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (donor_id) REFERENCES users (id),
-    FOREIGN KEY (claimed_by) REFERENCES users (id)
+    FOREIGN KEY (donor_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (claimed_by) REFERENCES users (id) ON DELETE SET NULL
 );
 
 CREATE TABLE notifications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     message TEXT NOT NULL,
-    type TEXT NOT NULL,         -- 'system', 'chat', 'claim', 'new_donation'
-    related_id INTEGER,         -- ID of related donation (for redirection)
+    type VARCHAR(50) NOT NULL,
+    related_id INTEGER,
     is_read INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     donation_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,
     text TEXT NOT NULL,
     is_read INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (donation_id) REFERENCES donations (id),
-    FOREIGN KEY (sender_id) REFERENCES users (id)
+    FOREIGN KEY (donation_id) REFERENCES donations (id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 -- DUMMY DATA
