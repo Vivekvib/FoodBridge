@@ -173,20 +173,52 @@ def donor():
 @app.route('/ngo')
 @login_required
 def ngo():
-    if session['role'] != 'ngo': 
+    # Safe dictionary get to avoid KeyError if role is missing from session
+    if session.get('role') != 'ngo': 
         flash("Access Denied: You are logged in as a Donor.", "warning")
         return redirect(url_for('index'))
         
+    # 1. Case-insensitive check to ensure only active listings appear on the market feed
     donations = execute_query(
-        "SELECT * FROM donations WHERE status = 'Active' ORDER BY created_at DESC", 
+        "SELECT * FROM donations WHERE LOWER(status) = 'active' ORDER BY created_at DESC", 
         fetchall=True
     )
+    
+    # 2. Fetch claims made by this specific NGO, joining donor username
     my_claims = execute_query(
-        'SELECT d.*, u.username as donor_name FROM donations d JOIN users u ON d.donor_id = u.id WHERE claimed_by = ? ORDER BY d.created_at DESC', 
+        """
+        SELECT d.*, u.username as donor_name 
+        FROM donations d 
+        JOIN users u ON d.donor_id = u.id 
+        WHERE d.claimed_by = ? 
+        ORDER BY d.created_at DESC
+        """, 
         (session['user_id'],), 
         fetchall=True
     )
-    return render_template('ngo.html', donations=donations, my_claims=my_claims)
+    
+    # 3. Prevent 500 errors by safely casting PostgreSQL datetime objects to strings
+    safe_donations = []
+    if donations:
+        for d in donations:
+            d_dict = dict(d)
+            if d_dict.get('created_at') is not None:
+                d_dict['created_at'] = str(d_dict['created_at'])
+            if d_dict.get('expiry_datetime') is not None:
+                d_dict['expiry_datetime'] = str(d_dict['expiry_datetime'])
+            safe_donations.append(d_dict)
+            
+    safe_claims = []
+    if my_claims:
+        for c in my_claims:
+            c_dict = dict(c)
+            if c_dict.get('created_at') is not None:
+                c_dict['created_at'] = str(c_dict['created_at'])
+            if c_dict.get('expiry_datetime') is not None:
+                c_dict['expiry_datetime'] = str(c_dict['expiry_datetime'])
+            safe_claims.append(c_dict)
+
+    return render_template('ngo.html', donations=safe_donations, my_claims=safe_claims)
 
 @app.route('/claim/<int:id>', methods=['POST'])
 @login_required

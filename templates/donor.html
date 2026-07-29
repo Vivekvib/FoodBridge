@@ -48,7 +48,7 @@
     
     {% set active_count = namespace(val=0) %}
     {% for d in my_donations %}
-      {% if d.status == 'Active' %}
+      {% if d.status|lower == 'active' %}
         {% set active_count.val = active_count.val + 1 %}
         <div class="card mb-3 shadow-sm border-start border-success border-4">
           <div class="card-body">
@@ -56,7 +56,7 @@
               <div>
                 <h5 class="card-title text-success mb-1">{{ d.food_item }}</h5>
                 <small class="text-muted">
-                  Qty: {{ d.quantity }} | Expires: {{ d.expiry_datetime[:16] }}
+                  Qty: {{ d.quantity }} | Expires: {{ (d.expiry_datetime | string)[:16] if d.expiry_datetime else '' }}
                 </small>
               </div>
               <span class="badge bg-success">Active (Listed)</span>
@@ -90,7 +90,7 @@
       <!-- Counter Badge for Completed Donations -->
       {% set claimed_count = namespace(val=0) %}
       {% for d in my_donations %}
-        {% if d.status == 'Claimed' %}
+        {% if d.status|lower == 'claimed' %}
           {% set claimed_count.val = claimed_count.val + 1 %}
         {% endif %}
       {% endfor %}
@@ -100,7 +100,7 @@
     {% if claimed_count.val > 0 %}
       <div class="list-group shadow-sm mb-4">
         {% for d in my_donations %}
-          {% if d.status == 'Claimed' %}
+          {% if d.status|lower == 'claimed' %}
             <div class="list-group-item d-flex justify-content-between align-items-center py-3">
               <!-- Item Details -->
               <div class="me-3">
