@@ -9,19 +9,15 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS donations (
     id SERIAL PRIMARY KEY,
     donor_id INTEGER NOT NULL,
-    org_name VARCHAR(100) NOT NULL,
-    food_item VARCHAR(150) NOT NULL,
-    category VARCHAR(50) NOT NULL DEFAULT 'Cooked Veg',
-    quantity INTEGER NOT NULL,
-    unit VARCHAR(30) NOT NULL DEFAULT 'Servings',
-    packaging_note VARCHAR(100) DEFAULT 'Not specified',
-    address TEXT NOT NULL,
-    latitude DOUBLE PRECISION NULL,
-    longitude DOUBLE PRECISION NULL,
-    expiry_datetime TIMESTAMP NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'Active',
-    claimed_by INTEGER NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    org_name VARCHAR(255) NOT NULL,
+    food_item VARCHAR(255) NOT NULL,
+    quantity VARCHAR(100) NOT NULL,
+    expiry_datetime VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Active',
+    claimed_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (donor_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (claimed_by) REFERENCES users (id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
