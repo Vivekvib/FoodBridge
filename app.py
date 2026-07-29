@@ -278,30 +278,86 @@ def ngo():
 @app.route('/claim/<int:id>', methods=['POST'])
 @login_required
 def claim(id):
-    if session['role'] != 'ngo': 
+    if session.get('role') != 'ngo':
+        flash("Unauthorized access.", "danger")
         return redirect(url_for('index'))
-        
+
+    # 1. Fetch the active donation listing
     donation = execute_query(
-        'SELECT donor_id, food_item FROM donations WHERE id = ?', 
-        (id,), 
+        "SELECT * FROM donations WHERE id = ? AND LOWER(status) = 'active'",
+        (id,),
         fetchone=True
     )
+    if not donation:
+        flash("This donation is no longer active or has already been claimed.", "warning")
+        return redirect(url_for('ngo'))
+
+    original_qty = int(donation['quantity'])
+    
+    # 2. Grab and validate the requested claim quantity
+    try:
+        claim_qty = int(request.form.get('claim_quantity', original_qty))
+    except (ValueError, TypeError):
+        claim_qty = original_qty
+
+    if claim_qty <= 0 or claim_qty > original_qty:
+        flash(f"Please enter a valid quantity between 1 and {original_qty}.", "warning")
+        return redirect(url_for('ngo'))
+
+    # 3. SPLIT-LISTING LOGIC
+    if claim_qty == original_qty:
+        # Full claim: simply update the existing listing
+        execute_query(
+            "UPDATE donations SET status = 'Claimed', claimed_by = ? WHERE id = ?",
+            (session['user_id'], id),
+            commit=True
+        )
+        msg = f"Great news! Your entire listing of {claim_qty} {donation['unit']} of {donation['food_item']} was claimed by {session['username']}."
+    else:
+        # Partial claim: update original record to 'Claimed' for claim_qty
+        remaining_qty = original_qty - claim_qty
+        
+        execute_query(
+            "UPDATE donations SET quantity = ?, status = 'Claimed', claimed_by = ? WHERE id = ?",
+            (claim_qty, session['user_id'], id),
+            commit=True
+        )
+        
+        # Generate a new 'Active' record for the remaining balance
+        split_insert_query = """
+            INSERT INTO donations 
+            (donor_id, org_name, food_item, category, quantity, unit, packaging_note, address, latitude, longitude, expiry_datetime, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+        """
+        execute_query(
+            split_insert_query,
+            (
+                donation['donor_id'],
+                donation['org_name'],
+                donation['food_item'],
+                donation['category'],
+                remaining_qty,
+                donation['unit'],
+                donation['packaging_note'],
+                donation['address'],
+                donation['latitude'],
+                donation['longitude'],
+                donation['expiry_datetime']
+            ),
+            commit=True
+        )
+        msg = f"Good news! {session['username']} claimed {claim_qty} {donation['unit']} of your {donation['food_item']}. The remaining {remaining_qty} {donation['unit']} is still listed live!"
+
+    # 4. Send notification to the Donor
     execute_query(
-        "UPDATE donations SET status = 'Claimed', claimed_by = ? WHERE id = ?", 
-        (session['user_id'], id), 
+        "INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)",
+        (donation['donor_id'], msg, 'claim', id),
         commit=True
     )
-    
-    # Notify Donor of claim
-    msg = f"Great news! Your {donation['food_item']} was claimed by {session['username']}."
-    execute_query(
-        'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)', 
-        (donation['donor_id'], msg, 'claim', id), 
-        commit=True
-    )
-    
-    flash('Claimed! Check "My Claims" to chat with the donor.', 'success')
+
+    flash(f"Successfully claimed {claim_qty} {donation['unit']}! Check 'My Claims' to chat with the donor.", "success")
     return redirect(url_for('ngo'))
+
 @app.route('/delete_donation/<int:donation_id>', methods=['POST'])
 @login_required
 def delete_donation(donation_id):
