@@ -247,6 +247,21 @@ def claim(id):
     
     flash('Claimed! Check "My Claims" to chat with the donor.', 'success')
     return redirect(url_for('ngo'))
+@app.route('/delete_donation/<int:donation_id>', methods=['POST'])
+@login_required
+def delete_donation(donation_id):
+    if session.get('role') != 'donor':
+        flash("Unauthorized action.", "danger")
+        return redirect(url_for('index'))
+        
+    # Only delete if it belongs to this donor AND is still active
+    execute_query(
+        "DELETE FROM donations WHERE id = ? AND donor_id = ? AND LOWER(status) = 'active'",
+        (donation_id, session['user_id']),
+        commit=True
+    )
+    flash("Active listing removed successfully.", "info")
+    return redirect(url_for('donor'))
 
 # --- NOTIFICATIONS & CHAT ---
 @app.route('/notifications')

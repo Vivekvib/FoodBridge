@@ -68,9 +68,20 @@
               <small class="text-muted">
                 Posted on: {{ (d.created_at | string)[:16] if d.created_at else '' }}
               </small>
-              <button class="btn btn-outline-secondary btn-sm" disabled>
-                Wait for Claim to Chat
-              </button>
+              
+              <div class="d-flex gap-2">
+                <!-- Delete/Cancel Listing Button -->
+                <form method="POST" action="{{ url_for('delete_donation', donation_id=d.id) }}" 
+                      onsubmit="return confirm('Remove this listing?');">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">
+                    🗑️ Delete
+                  </button>
+                </form>
+
+                <button class="btn btn-outline-secondary btn-sm" disabled>
+                  Wait for Claim
+                </button>
+              </div>
             </div>
           </div>
         </div>
