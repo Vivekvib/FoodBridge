@@ -259,21 +259,44 @@ def chat(donation_id):
         fetchone=True
     )
     
+    # Safety check: prevent crash if donation was deleted or doesn't exist
+    if not donation:
+        flash("Donation not found.", "danger")
+        return redirect(url_for('index'))
+    
     if request.method == 'POST':
-        execute_query(
-            'INSERT INTO messages (donation_id, sender_id, text) VALUES (?, ?, ?)',
-            (donation_id, session['user_id'], request.form['message']),
-            commit=True
-        )
-        
-        recipient_id = donation['claimed_by'] if session['user_id'] == donation['donor_id'] else donation['donor_id']
-        msg = f"New message from {session['username']} regarding {donation['food_item']}"
-        execute_query(
-            'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-            (recipient_id, msg, 'chat', donation_id),
-            commit=True
-        )
-        return redirect(url_for('chat', donation_id=donation_id))
+        try:
+            # Safely grab message text whether input name is 'message' or 'text'
+            msg_text = request.form.get('message') or request.form.get('text')
+            if not msg_text:
+                flash("Message cannot be empty.", "warning")
+                return redirect(url_for('chat', donation_id=donation_id))
+
+            # 1. Insert the chat message
+            execute_query(
+                'INSERT INTO messages (donation_id, sender_id, text) VALUES (?, ?, ?)',
+                (donation_id, session['user_id'], msg_text),
+                commit=True
+            )
+            
+            # 2. Determine recipient safely (fallback to donor if claimed_by is None)
+            recipient_id = donation['claimed_by'] if session['user_id'] == donation['donor_id'] else donation['donor_id']
+            
+            # Only send notification if a valid recipient exists and is not the sender
+            if recipient_id and recipient_id != session['user_id']:
+                notif_msg = f"New message from {session['username']} regarding {donation['food_item']}"
+                execute_query(
+                    'INSERT INTO notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
+                    (recipient_id, notif_msg, 'chat', donation_id),
+                    commit=True
+                )
+                
+            return redirect(url_for('chat', donation_id=donation_id))
+            
+        except Exception as e:
+            print(f"CHAT POST ERROR: {e}")
+            flash(f"Error sending message: {e}", "danger")
+            return redirect(url_for('chat', donation_id=donation_id))
     
     messages = execute_query(
         'SELECT m.*, u.username FROM messages m JOIN users u ON m.sender_id = u.id WHERE donation_id = ? ORDER BY m.created_at', 

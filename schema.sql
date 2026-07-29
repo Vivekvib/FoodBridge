@@ -1,9 +1,4 @@
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS donations;
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(150) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -11,7 +6,7 @@ CREATE TABLE users (
     phone VARCHAR(20)
 );
 
-CREATE TABLE donations (
+CREATE TABLE IF NOT EXISTS donations (
     id SERIAL PRIMARY KEY,
     donor_id INTEGER NOT NULL,
     org_name VARCHAR(255) NOT NULL,
@@ -25,7 +20,7 @@ CREATE TABLE donations (
     FOREIGN KEY (claimed_by) REFERENCES users (id) ON DELETE SET NULL
 );
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     message TEXT NOT NULL,
@@ -36,7 +31,7 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     donation_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,
