@@ -263,7 +263,7 @@ def chat(donation_id):
     if not donation:
         flash("Donation not found.", "danger")
         return redirect(url_for('index'))
-    
+        
     if request.method == 'POST':
         try:
             # Safely grab message text whether input name is 'message' or 'text'
@@ -303,8 +303,17 @@ def chat(donation_id):
         (donation_id,), 
         fetchall=True
     )
-    return render_template('chat.html', donation=donation, messages=messages)
-
+    
+    # FIX: Ensure messages are mutable dicts and convert PostgreSQL datetime timestamps to strings
+    safe_messages = []
+    if messages:
+        for m in messages:
+            msg_dict = dict(m)
+            if 'created_at' in msg_dict and msg_dict['created_at'] is not None:
+                msg_dict['created_at'] = str(msg_dict['created_at'])
+            safe_messages.append(msg_dict)
+            
+    return render_template('chat.html', donation=donation, messages=safe_messages)
 @app.route('/init-db-now')
 def force_init_db():
     try:
