@@ -1,28 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-8 col-md-10">
-      
-      <!-- Donor Header -->
-      <div class="text-center mb-4">
-        <h2 class="fw-bold text-success">📢 Post a New Food Donation</h2>
-        <p class="text-muted">
-          Provide structured logistics details so NGOs can coordinate and claim food quickly.
-        </p>
-      </div>
+<!-- Include Flatpickr CSS for Clean Date/Time Picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_green.css">
 
-      <!-- Donation Form Card -->
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-success text-white fw-bold py-3">
-          🍱 Donation Logistics Form
+<div class="container-fluid mt-3 mb-5">
+  
+  <!-- Page Title -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="fw-bold text-success mb-0">📢 Post & Coordinate Food Donations</h3>
+      <small class="text-muted">Enter structured logistics to help NGOs rescue food faster</small>
+    </div>
+  </div>
+
+  <div class="row">
+    
+    <!-- ========================================== -->
+    <!-- LEFT COLUMN: DONATION LOGISTICS FORM     -->
+    <!-- ========================================== -->
+    <div class="col-md-7 mb-4">
+      <div class="card shadow-sm border-0 border-top border-success border-4">
+        <div class="card-header bg-transparent fw-bold py-3 text-success fs-5">
+          🍱 New Donation Logistics Form
         </div>
         <div class="card-body p-4">
           <form method="POST" action="{{ url_for('donor') }}">
             
             <!-- SECTION 1: Food Details -->
-            <h5 class="text-success mb-3 border-bottom pb-2">1. Food Information</h5>
+            <h6 class="text-success fw-bold mb-3 border-bottom pb-2">1. Food Information</h6>
             
             <div class="mb-3">
               <label for="food_item" class="form-label fw-semibold">Food Title / Description <span class="text-danger">*</span></label>
@@ -43,13 +50,13 @@
                 </select>
               </div>
 
-              <div class="col-md-4">
-                <label for="quantity" class="form-label fw-semibold">Total Quantity <span class="text-danger">*</span></label>
+              <div class="col-md-3">
+                <label for="quantity" class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
                 <input type="number" class="form-control" id="quantity" name="quantity" 
-                       min="1" placeholder="e.g., 50" required>
+                       min="1" placeholder="50" required>
               </div>
 
-              <div class="col-md-2">
+              <div class="col-md-3">
                 <label for="unit" class="form-label fw-semibold">Unit <span class="text-danger">*</span></label>
                 <select class="form-select" id="unit" name="unit" required>
                   <option value="Servings">Servings</option>
@@ -68,7 +75,7 @@
             </div>
 
             <!-- SECTION 2: Pickup Logistics & Location -->
-            <h5 class="text-success mb-3 border-bottom pb-2">2. Pickup Location & GPS</h5>
+            <h6 class="text-success fw-bold mb-3 border-bottom pb-2">2. Pickup Location & GPS</h6>
 
             <div class="mb-3">
               <label for="address" class="form-label fw-semibold">Pickup Street Address <span class="text-danger">*</span></label>
@@ -88,7 +95,7 @@
                        placeholder="e.g., 77.0266" readonly>
               </div>
               <div class="col-md-4 mt-2 mt-md-0">
-                <button type="button" class="btn btn-outline-primary w-100" onclick="getLocation()">
+                <button type="button" class="btn btn-outline-primary w-100 fw-semibold" onclick="getLocation()">
                   📍 Auto-Detect GPS
                 </button>
               </div>
@@ -97,8 +104,8 @@
               </div>
             </div>
 
-            <!-- SECTION 3: Deadline & Expiry -->
-            <h5 class="text-success mb-3 border-bottom pb-2">3. Pickup Deadline</h5>
+            <!-- SECTION 3: Clean Swipe/Scroll Deadline Picker -->
+            <h6 class="text-success fw-bold mb-3 border-bottom pb-2">3. Pickup Deadline</h6>
 
             <div class="mb-4">
               <label class="form-label fw-semibold">Pickup Deadline (Date & Time) <span class="text-danger">*</span></label>
@@ -111,17 +118,21 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryEndOfDay()">🌙 End of Day</button>
               </div>
 
-              <!-- Datetime Input -->
-              <input type="datetime-local" name="expiry" id="expiryInput" class="form-control form-control-lg" required>
+              <!-- Flatpickr Input (Allows Typing + Clean Scroll/Swipe Time Picker) -->
+              <div class="input-group">
+                <span class="input-group-text bg-light">📅</span>
+                <input type="text" name="expiry" id="expiryInput" class="form-control form-control-lg bg-white" 
+                       placeholder="Select date & time or type (YYYY-MM-DD HH:MM)..." required>
+              </div>
               
               <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-                💡 <strong>Tip:</strong> Click the calendar icon to pick, or click directly inside the box to type numbers (DD-MM-YYYY HH:MM). Past times are disabled automatically.
+                💡 <strong>Tip:</strong> Click to use the clean scroll/swipe selector, or type numbers directly on your keyboard. Past dates are locked out.
               </small>
             </div>
 
             <!-- Submit Button -->
             <div class="d-grid mt-4">
-              <button type="submit" class="btn btn-success btn-lg fw-bold py-3">
+              <button type="submit" class="btn btn-success btn-lg fw-bold py-3 shadow-sm">
                 Publish Donation Live 🚀
               </button>
             </div>
@@ -129,74 +140,100 @@
           </form>
         </div>
       </div>
+    </div>
 
-      <!-- Optional: Donor Active Listings Section -->
-      {% if my_donations and my_donations|length > 0 %}
-      <div class="card shadow-sm border-0 mt-5">
-        <div class="card-header bg-dark text-white fw-bold">
-          📋 My Recently Posted Donations
+    <!-- ========================================== -->
+    <!-- RIGHT COLUMN: ACTIVE LISTINGS & CHATS    -->
+    <!-- ========================================== -->
+    <div class="col-md-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-3">
+          <span>📋 My Posted Donations & Claims</span>
+          <span class="badge bg-success fs-6">{{ my_donations|length if my_donations else 0 }}</span>
         </div>
         <div class="card-body p-0">
-          <div class="list-group list-group-flush">
-            {% for d in my_donations %}
-            <div class="list-group-item p-3 d-flex justify-content-between align-items-center">
-              <div>
-                <span class="badge bg-light text-dark border mb-1">{{ d.category }}</span>
-                <h6 class="mb-0 fw-bold">{{ d.food_item }}</h6>
-                <small class="text-muted">
-                  <strong>Qty:</strong> {{ d.quantity }} {{ d.unit }} | 
-                  <strong>Status:</strong> 
-                  <span class="badge {% if d.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ d.status }}</span>
-                </small>
+          {% if my_donations and my_donations|length > 0 %}
+            <div class="list-group list-group-flush">
+              {% for d in my_donations %}
+              <div class="list-group-item p-3">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                  <div>
+                    <span class="badge bg-light text-dark border mb-1">{{ d.category }}</span>
+                    <h6 class="mb-0 fw-bold text-dark">{{ d.food_item }}</h6>
+                  </div>
+                  <span class="badge {% if d.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %} fs-6">
+                    {{ d.status }}
+                  </span>
+                </div>
+
+                <div class="text-muted mb-2" style="font-size: 0.85rem;">
+                  <div><strong>Qty:</strong> {{ d.quantity }} {{ d.unit }}</div>
+                  <div><strong>📍 Pickup:</strong> {{ d.address }}</div>
+                  <div><strong>Expires:</strong> {{ (d.expiry_datetime | string)[:16] if d.expiry_datetime else 'N/A' }}</div>
+                </div>
+
+                <!-- Chat coordination button when claimed -->
+                <div class="d-flex justify-content-end">
+                  {% if d.status == 'Claimed' %}
+                    <a href="{{ url_for('chat', donation_id=d.id) }}" class="btn btn-sm btn-primary fw-bold">
+                      💬 Open Chat with NGO
+                    </a>
+                  {% else %}
+                    <small class="text-muted fst-italic">Waiting for an NGO to claim...</small>
+                  {% endif %}
+                </div>
               </div>
-              <div class="text-end">
-                <small class="text-muted d-block" style="font-size: 0.75rem;">
-                  Expires: {{ (d.expiry_datetime | string)[:16] if d.expiry_datetime else 'N/A' }}
-                </small>
-                {% if d.status == 'Claimed' %}
-                  <a href="{{ url_for('chat', donation_id=d.id) }}" class="btn btn-sm btn-primary mt-1">💬 Open Chat</a>
-                {% endif %}
-              </div>
+              {% endfor %}
             </div>
-            {% endfor %}
-          </div>
+          {% else %}
+            <div class="p-5 text-center text-muted">
+              <h5>No donations posted yet</h5>
+              <p class="small mb-0">Use the form on the left to publish your first structured donation. It will appear here instantly!</p>
+            </div>
+          {% endif %}
         </div>
       </div>
-      {% endif %}
-
     </div>
+
   </div>
 </div>
 
-<!-- JavaScript for GPS Detection & Future-Only Calendar Lock -->
+<!-- Include Flatpickr JS via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <script>
-// 1. Lock the Calendar to prevent selecting any past date or time
-function enforceMinDateTime() {
-  const now = new Date();
-  // Adjust for local timezone offset so the ISO string matches user's clock exactly
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  const localMinDateTime = now.toISOString().slice(0, 16);
-  
-  const expiryInput = document.getElementById("expiryInput");
-  if (expiryInput) {
-    expiryInput.min = localMinDateTime;
-  }
-}
+let fpInstance;
+
+// 1. Initialize Clean Swipe/Scroll Picker with Typing Allowed & Past Dates Disabled
+document.addEventListener("DOMContentLoaded", function() {
+  fpInstance = flatpickr("#expiryInput", {
+    enableTime: true,
+    dateFormat: "Y-m-d\\TH:i",    // Matches exact format required by backend Python script
+    altInput: true,               // Shows clean human-friendly format to the donor
+    altFormat: "F j, Y  at  h:i K",
+    minDate: "today",             // Blocks past dates automatically
+    time_24hr: false,             // Clean 12-hour AM/PM scroll selector
+    allowInput: true,             // Allows donors to type numbers directly with keyboard!
+    minuteIncrement: 5            // Clean 5-minute scrolling intervals
+  });
+});
 
 // 2. Helper: Set deadline to X hours from now
 function setExpiryHours(hours) {
   const target = new Date();
   target.setHours(target.getHours() + hours);
-  target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
-  document.getElementById("expiryInput").value = target.toISOString().slice(0, 16);
+  if (fpInstance) {
+    fpInstance.setDate(target, true);
+  }
 }
 
 // 3. Helper: Set deadline to 11:59 PM today
 function setExpiryEndOfDay() {
   const target = new Date();
   target.setHours(23, 59, 0, 0);
-  target.setMinutes(target.getMinutes() - target.getTimezoneOffset());
-  document.getElementById("expiryInput").value = target.toISOString().slice(0, 16);
+  if (fpInstance) {
+    fpInstance.setDate(target, true);
+  }
 }
 
 // 4. Geolocation Auto-Detect Function
@@ -223,8 +260,5 @@ function getLocation() {
     statusEl.className = "small text-danger fw-semibold";
   }
 }
-
-// Run date lock immediately when the page loads
-document.addEventListener("DOMContentLoaded", enforceMinDateTime);
 </script>
 {% endblock %}
