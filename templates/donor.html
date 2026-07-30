@@ -69,9 +69,24 @@
             </div>
 
             <div class="mb-4">
-              <label for="packaging_note" class="form-label fw-semibold">Packaging & Handling Notes <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="packaging_note" name="packaging_note" 
-                     placeholder="e.g., Packed in aluminum foil trays, ready to serve immediately" required>
+              <label for="packaging_note" class="form-label fw-semibold">
+                Packaging & Handling Notes <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="packaging_note" name="packaging_note" required>
+                <option value="" disabled selected>Select packaging type...</option>
+                <option value="Packed in individual meal boxes/containers">
+                  🍱 Packed in individual meal boxes/containers
+                </option>
+                <option value="Large bulk catering pans / trays (ready to serve)">
+                  🍲 Large bulk catering pans / trays (ready to serve)
+                </option>
+                <option value="Sealed food-grade packets / foil bags">
+                  🛍️ Sealed food-grade packets / foil bags
+                </option>
+                <option value="Unpackaged / Raw produce (NGO must bring containers/crates)">
+                  📦 Unpackaged / Raw produce (NGO must bring containers/crates)
+                </option>
+              </select>
             </div>
 
             <!-- SECTION 2: Pickup Logistics & Location -->
