@@ -1,214 +1,209 @@
 {% extends "base.html" %}
-
 {% block content %}
 <!-- Include Flatpickr CSS for Clean Date/Time Picker -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_green.css">
 
-<div class="container-fluid mt-3 mb-5">
+<div class="row mt-3">
   
-  <!-- Page Title -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h3 class="fw-bold text-success mb-0">📢 Post & Coordinate Food Donations</h3>
-      <small class="text-muted">Enter structured logistics to help NGOs rescue food faster</small>
+  <!-- LEFT COLUMN: Upgraded Structured Donation Form -->
+  <div class="col-md-5 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white fw-bold">
+        📦 Post New Donation (Logistics Upgraded)
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('donor') }}" id="donationForm">
+          
+          <!-- Hidden Fields for GPS Coordinates -->
+          <input type="hidden" name="latitude" id="latInput">
+          <input type="hidden" name="longitude" id="lngInput">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Organization / Donor Name</label>
+            <input type="text" name="org_name" class="form-control" placeholder="e.g. {{ session.get('username') }}" required>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-7">
+              <label class="form-label fw-semibold">Food Description</label>
+              <input type="text" name="food_item" class="form-control" placeholder="e.g. Paneer Butter Masala & Roti" required>
+            </div>
+            <div class="col-5">
+              <label class="form-label fw-semibold">Category</label>
+              <select name="category" class="form-select" required>
+                <option value="Cooked Veg">🥗 Cooked Veg</option>
+                <option value="Cooked Non-Veg">🍗 Cooked Non-Veg</option>
+                <option value="Raw Grains">🌾 Raw Grains</option>
+                <option value="Baked Goods">🍞 Baked Goods</option>
+                <option value="Beverages">🧃 Beverages</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Quantity</label>
+              <input type="number" name="quantity" class="form-control" placeholder="e.g. 50" min="1" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Unit</label>
+              <select name="unit" class="form-select" required>
+                <option value="Servings">Servings / Meals</option>
+                <option value="Kg">Kg</option>
+                <option value="Liters">Liters</option>
+                <option value="Boxes">Boxes / Packets</option>
+                <option value="Pieces">Pieces</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Packaging Type</label>
+            <select name="packaging_note" class="form-select" required>
+              <option value="Pre-packed in containers">📦 Pre-packed in foil/plastic boxes</option>
+              <option value="Bulk vessels - bring containers">🍲 In bulk vessels (bring containers)</option>
+              <option value="Original manufacturer packaging">🏷️ Original manufacturer packaging</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold mb-0">Pickup Address / Landmark</label>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="geoBtn" onclick="getLocation()">
+                📍 Pin My Location
+              </button>
+            </div>
+            <textarea name="address" class="form-control" rows="2" placeholder="e.g. Enso Society Room, Block 3, College Campus" required></textarea>
+            <small class="text-muted" id="geoStatus">Click "Pin My Location" to attach GPS coordinates for drivers.</small>
+          </div>
+
+          <!-- ONLY CHANGED BLOCK: Upgraded Pickup Deadline -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Pickup Deadline</label>
+            
+            <!-- One-Click Quick Expiry Presets -->
+            <div class="d-flex gap-2 mb-2 flex-wrap">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryHours(2)">⏱️ +2 Hours</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryHours(4)">⏱️ +4 Hours</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryHours(6)">⏱️ +6 Hours</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryEndOfDay()">🌙 End of Day</button>
+            </div>
+
+            <!-- Flatpickr Input (Swipe/Scroll + Keyboard Typing + Past Dates Locked) -->
+            <input type="text" name="expiry" id="expiryInput" class="form-control bg-white" placeholder="Select date & time or type (YYYY-MM-DD HH:MM)..." required>
+          </div>
+          
+          <button type="submit" class="btn btn-success w-100 fw-bold">
+            Publish Donation Live 🚀
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 
-  <div class="row">
+  <!-- RIGHT COLUMN: Active Listings & Claimed History Log -->
+  <div class="col-md-7">
     
-    <!-- ========================================== -->
-    <!-- LEFT COLUMN: DONATION LOGISTICS FORM     -->
-    <!-- ========================================== -->
-    <div class="col-md-7 mb-4">
-      <div class="card shadow-sm border-0 border-top border-success border-4">
-        <div class="card-header bg-transparent fw-bold py-3 text-success fs-5">
-          🍱 New Donation Logistics Form
-        </div>
-        <div class="card-body p-4">
-          <form method="POST" action="{{ url_for('donor') }}">
+    <!-- 1. ACTIVE LISTINGS (Waiting to be claimed) -->
+    <h4 class="mb-3">🟢 Active Listings</h4>
+    
+    {% set active_count = namespace(val=0) %}
+    {% for d in my_donations %}
+      {% if d.status|lower == 'active' %}
+        {% set active_count.val = active_count.val + 1 %}
+        <div class="card mb-3 shadow-sm border-start border-success border-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <span class="badge bg-light text-dark border mb-1">{{ d.category }}</span>
+                <h5 class="card-title text-success mb-1">{{ d.food_item }}</h5>
+                <div class="fw-semibold">
+                  Qty: {{ d.quantity }} {{ d.unit }} &bull; 
+                  <small class="text-muted">Expires: {{ (d.expiry_datetime | string)[:16] if d.expiry_datetime else '' }}</small>
+                </div>
+              </div>
+              <span class="badge bg-success">Active (Listed)</span>
+            </div>
+
+            <div class="bg-light p-2 rounded mb-2" style="font-size: 0.85rem;">
+              <div><strong>📍 Address:</strong> {{ d.address }}</div>
+              <div><strong>📦 Packaging:</strong> {{ d.packaging_note }}</div>
+              {% if d.latitude and d.longitude %}
+                <div class="text-primary mt-1">✓ GPS Location Pinned</div>
+              {% endif %}
+            </div>
             
-            <!-- SECTION 1: Food Details -->
-            <h6 class="text-success fw-bold mb-3 border-bottom pb-2">1. Food Information</h6>
+            <hr class="my-2">
             
-            <div class="mb-3">
-              <label for="food_item" class="form-label fw-semibold">Food Title / Description <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="food_item" name="food_item" 
-                     placeholder="e.g., 50 Boxed Vegetable Biryani Meals" required>
-            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                Posted: {{ (d.created_at | string)[:16] if d.created_at else '' }}
+              </small>
+              
+              <div class="d-flex gap-2">
+                <!-- Delete Listing Button -->
+                <form method="POST" action="{{ url_for('delete_donation', donation_id=d.id) }}" 
+                      onsubmit="return confirm('Remove this listing?');">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">
+                    🗑️ Delete
+                  </button>
+                </form>
 
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                <select class="form-select" id="category" name="category" required>
-                  <option value="" disabled selected>Select category...</option>
-                  <option value="Prepared Meals">Prepared Meals</option>
-                  <option value="Fresh Produce">Fresh Produce</option>
-                  <option value="Packaged / Dry Goods">Packaged / Dry Goods</option>
-                  <option value="Bakery & Dairy">Bakery & Dairy</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div class="col-md-3">
-                <label for="quantity" class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" id="quantity" name="quantity" 
-                       min="1" placeholder="50" required>
-              </div>
-
-              <div class="col-md-3">
-                <label for="unit" class="form-label fw-semibold">Unit <span class="text-danger">*</span></label>
-                <select class="form-select" id="unit" name="unit" required>
-                  <option value="Servings">Servings</option>
-                  <option value="Kg">Kg</option>
-                  <option value="Boxes">Boxes</option>
-                  <option value="Packets">Packets</option>
-                  <option value="Liters">Liters</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label for="packaging_note" class="form-label fw-semibold">
-                Packaging & Handling Notes <span class="text-danger">*</span>
-              </label>
-              <select class="form-select" id="packaging_note" name="packaging_note" required>
-                <option value="" disabled selected>Select packaging type...</option>
-                <option value="Packed in individual meal boxes/containers">
-                  🍱 Packed in individual meal boxes/containers
-                </option>
-                <option value="Large bulk catering pans / trays (ready to serve)">
-                  🍲 Large bulk catering pans / trays (ready to serve)
-                </option>
-                <option value="Sealed food-grade packets / foil bags">
-                  🛍️ Sealed food-grade packets / foil bags
-                </option>
-                <option value="Unpackaged / Raw produce (NGO must bring containers/crates)">
-                  📦 Unpackaged / Raw produce (NGO must bring containers/crates)
-                </option>
-              </select>
-            </div>
-
-            <!-- SECTION 2: Pickup Logistics & Location -->
-            <h6 class="text-success fw-bold mb-3 border-bottom pb-2">2. Pickup Location & GPS</h6>
-
-            <div class="mb-3">
-              <label for="address" class="form-label fw-semibold">Pickup Street Address <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="address" name="address" 
-                     placeholder="e.g., 123 Main Street, Gate 4, Gurugram" required>
-            </div>
-
-            <div class="row align-items-end mb-4">
-              <div class="col-md-4">
-                <label for="latitude" class="form-label fw-semibold">Latitude</label>
-                <input type="text" class="form-control bg-light" id="latitude" name="latitude" 
-                       placeholder="e.g., 28.4595" readonly>
-              </div>
-              <div class="col-md-4">
-                <label for="longitude" class="form-label fw-semibold">Longitude</label>
-                <input type="text" class="form-control bg-light" id="longitude" name="longitude" 
-                       placeholder="e.g., 77.0266" readonly>
-              </div>
-              <div class="col-md-4 mt-2 mt-md-0">
-                <button type="button" class="btn btn-outline-primary w-100 fw-semibold" onclick="getLocation()">
-                  📍 Auto-Detect GPS
+                <button class="btn btn-outline-secondary btn-sm" disabled>
+                  Wait for Claim
                 </button>
               </div>
-              <div class="col-12 mt-1">
-                <span id="gpsStatus" class="small text-muted">Click above to automatically attach your GPS coordinates for NGO mapping.</span>
-              </div>
             </div>
-
-            <!-- SECTION 3: Clean Swipe/Scroll Deadline Picker -->
-            <h6 class="text-success fw-bold mb-3 border-bottom pb-2">3. Pickup Deadline</h6>
-
-            <div class="mb-4">
-              <label class="form-label fw-semibold">Pickup Deadline (Date & Time) <span class="text-danger">*</span></label>
-              
-              <!-- One-Click Quick Expiry Presets -->
-              <div class="d-flex gap-2 mb-2 flex-wrap">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryHours(2)">⏱️ +2 Hours</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryHours(4)">⏱️ +4 Hours</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryHours(6)">⏱️ +6 Hours</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setExpiryEndOfDay()">🌙 End of Day</button>
-              </div>
-
-              <!-- Flatpickr Input (Allows Typing + Clean Scroll/Swipe Time Picker) -->
-              <div class="input-group">
-                <span class="input-group-text bg-light">📅</span>
-                <input type="text" name="expiry" id="expiryInput" class="form-control form-control-lg bg-white" 
-                       placeholder="Select date & time or type (YYYY-MM-DD HH:MM)..." required>
-              </div>
-              
-              <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-                💡 <strong>Tip:</strong> Click to use the clean scroll/swipe selector, or type numbers directly on your keyboard. Past dates are locked out.
-              </small>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="d-grid mt-4">
-              <button type="submit" class="btn btn-success btn-lg fw-bold py-3 shadow-sm">
-                Publish Donation Live 🚀
-              </button>
-            </div>
-
-          </form>
+          </div>
         </div>
+      {% endif %}
+    {% endfor %}
+    
+    {% if active_count.val == 0 %}
+      <div class="alert alert-light border text-center text-muted mb-4">
+        No active listings right now. Post a structured donation on the left!
       </div>
+    {% endif %}
+
+    <!-- 2. CLAIMED DONATION HISTORY -->
+    <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+      <h4 class="mb-0">📋 Claimed Donation History</h4>
+      {% set claimed_count = namespace(val=0) %}
+      {% for d in my_donations %}
+        {% if d.status|lower == 'claimed' %}
+          {% set claimed_count.val = claimed_count.val + 1 %}
+        {% endif %}
+      {% endfor %}
+      <span class="badge bg-primary fs-6">Total Claimed: {{ claimed_count.val }}</span>
     </div>
 
-    <!-- ========================================== -->
-    <!-- RIGHT COLUMN: ACTIVE LISTINGS & CHATS    -->
-    <!-- ========================================== -->
-    <div class="col-md-5">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-3">
-          <span>📋 My Posted Donations & Claims</span>
-          <span class="badge bg-success fs-6">{{ my_donations|length if my_donations else 0 }}</span>
-        </div>
-        <div class="card-body p-0">
-          {% if my_donations and my_donations|length > 0 %}
-            <div class="list-group list-group-flush">
-              {% for d in my_donations %}
-              <div class="list-group-item p-3">
-                <div class="d-flex justify-content-between align-items-start mb-1">
-                  <div>
-                    <span class="badge bg-light text-dark border mb-1">{{ d.category }}</span>
-                    <h6 class="mb-0 fw-bold text-dark">{{ d.food_item }}</h6>
-                  </div>
-                  <span class="badge {% if d.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %} fs-6">
-                    {{ d.status }}
-                  </span>
-                </div>
-
-                <div class="text-muted mb-2" style="font-size: 0.85rem;">
-                  <div><strong>Qty:</strong> {{ d.quantity }} {{ d.unit }}</div>
-                  <div><strong>📍 Pickup:</strong> {{ d.address }}</div>
-                  <div><strong>Expires:</strong> {{ (d.expiry_datetime | string)[:16] if d.expiry_datetime else 'N/A' }}</div>
-                </div>
-
-                <!-- Chat coordination button when claimed -->
-                <div class="d-flex justify-content-end">
-                  {% if d.status == 'Claimed' %}
-                    <a href="{{ url_for('chat', donation_id=d.id) }}" class="btn btn-sm btn-primary fw-bold">
-                      💬 Open Chat with NGO
-                    </a>
-                  {% else %}
-                    <small class="text-muted fst-italic">Waiting for an NGO to claim...</small>
-                  {% endif %}
+    {% if claimed_count.val > 0 %}
+      <div class="list-group shadow-sm mb-4">
+        {% for d in my_donations %}
+          {% if d.status|lower == 'claimed' %}
+            <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+              <div class="me-3">
+                <div class="fw-bold text-dark">{{ d.food_item }}</div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                  Qty: {{ d.quantity }} {{ d.unit }} &bull; Posted: {{ (d.created_at | string)[:16] if d.created_at else '' }}
                 </div>
               </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="p-5 text-center text-muted">
-              <h5>No donations posted yet</h5>
-              <p class="small mb-0">Use the form on the left to publish your first structured donation. It will appear here instantly!</p>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-primary border">Claimed</span>
+                <a href="{{ url_for('chat', donation_id=d.id) }}" class="btn btn-primary btn-sm d-flex align-items-center">
+                  💬 Chat
+                </a>
+              </div>
             </div>
           {% endif %}
-        </div>
+        {% endfor %}
       </div>
-    </div>
+    {% else %}
+      <div class="alert alert-light border text-center text-muted">
+        No donations have been claimed yet.
+      </div>
+    {% endif %}
 
   </div>
 </div>
@@ -216,24 +211,23 @@
 <!-- Include Flatpickr JS via CDN -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
+<!-- Flatpickr Date/Time Picker Script -->
 <script>
 let fpInstance;
 
-// 1. Initialize Clean Swipe/Scroll Picker with Typing Allowed & Past Dates Disabled
 document.addEventListener("DOMContentLoaded", function() {
   fpInstance = flatpickr("#expiryInput", {
     enableTime: true,
-    dateFormat: "Y-m-d\\TH:i",    // Matches exact format required by backend Python script
-    altInput: true,               // Shows clean human-friendly format to the donor
+    dateFormat: "Y-m-d\\TH:i",    // Exactly matches backend Python requirements
+    altInput: true,               // Friendly formatted date display
     altFormat: "F j, Y  at  h:i K",
-    minDate: "today",             // Blocks past dates automatically
-    time_24hr: false,             // Clean 12-hour AM/PM scroll selector
-    allowInput: true,             // Allows donors to type numbers directly with keyboard!
-    minuteIncrement: 5            // Clean 5-minute scrolling intervals
+    minDate: "today",             // Completely blocks selecting past dates
+    time_24hr: false,             // Clean 12-hour AM/PM swipe/scroll time selector
+    allowInput: true,             // Enables keyboard typing!
+    minuteIncrement: 5            // Clean 5-minute increments for scrolling
   });
 });
 
-// 2. Helper: Set deadline to X hours from now
 function setExpiryHours(hours) {
   const target = new Date();
   target.setHours(target.getHours() + hours);
@@ -242,7 +236,6 @@ function setExpiryHours(hours) {
   }
 }
 
-// 3. Helper: Set deadline to 11:59 PM today
 function setExpiryEndOfDay() {
   const target = new Date();
   target.setHours(23, 59, 0, 0);
@@ -250,30 +243,39 @@ function setExpiryEndOfDay() {
     fpInstance.setDate(target, true);
   }
 }
+</script>
 
-// 4. Geolocation Auto-Detect Function
+<!-- HTML5 Geolocation Script -->
+<script>
 function getLocation() {
-  const statusEl = document.getElementById("gpsStatus");
-  if (navigator.geolocation) {
-    statusEl.innerText = "Locating... Please allow browser permission.";
-    statusEl.className = "small text-primary fw-semibold";
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        document.getElementById("latitude").value = position.coords.latitude.toFixed(6);
-        document.getElementById("longitude").value = position.coords.longitude.toFixed(6);
-        statusEl.innerText = "✅ GPS Coordinates Captured Successfully!";
-        statusEl.className = "small text-success fw-semibold";
-      },
-      (error) => {
-        statusEl.innerText = "❌ Could not retrieve location. Please allow GPS permissions in your browser.";
-        statusEl.className = "small text-danger fw-semibold";
-      }
-    );
-  } else {
-    statusEl.innerText = "❌ Geolocation is not supported by your browser.";
-    statusEl.className = "small text-danger fw-semibold";
+  const statusEl = document.getElementById("geoStatus");
+  const btnEl = document.getElementById("geoBtn");
+
+  if (!navigator.geolocation) {
+    statusEl.innerText = "Geolocation is not supported by your browser.";
+    return;
   }
+
+  btnEl.disabled = true;
+  btnEl.innerText = "📍 Pinning...";
+  statusEl.innerText = "Locating...";
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      document.getElementById("latInput").value = position.coords.latitude;
+      document.getElementById("lngInput").value = position.coords.longitude;
+      statusEl.innerHTML = `<span class="text-success fw-bold">✓ Location pinned (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})</span>`;
+      btnEl.innerText = "✓ Pinned";
+      btnEl.classList.remove("btn-outline-primary");
+      btnEl.classList.add("btn-success");
+      btnEl.disabled = false;
+    },
+    (error) => {
+      statusEl.innerHTML = `<span class="text-danger">Could not get location: ${error.message}</span>`;
+      btnEl.innerText = "📍 Try Again";
+      btnEl.disabled = false;
+    }
+  );
 }
 </script>
 {% endblock %}
