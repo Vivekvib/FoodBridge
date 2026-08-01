@@ -55,7 +55,7 @@
                                 {% if donation['latitude'] and donation['longitude'] %}
                                     <div class="mt-2">
                                         <a href="https://www.google.com/maps?q={{ donation['latitude'] }},{{ donation['longitude'] }}" 
-                                           target="_blank" class="btn btn-sm btn-outline-primary py-0">
+                                           target="_blank" class="btn btn-sm btn-primary py-0">
                                             🗺️ Open GPS in Google Maps
                                         </a>
                                     </div>
@@ -97,7 +97,8 @@
                     </div>
 
                     <div class="card-footer text-muted small d-flex justify-content-between">
-                        <span>Posted: {{ (donation['created_at'] | string)[:16] if donation['created_at'] else '' }}</span>
+                        <!-- Upgraded with 'server-time' class for JS translation -->
+                        <span>Posted: <span class="server-time">{{ donation['created_at'] }}</span></span>
                         <span class="text-success fw-semibold">Live</span>
                     </div>
 
@@ -133,7 +134,8 @@
                         </div>
 
                         <p class="card-text small text-muted mb-3">
-                            Claimed on: {{ (claim['created_at'] | string)[:16] if claim['created_at'] else '' }}
+                            <!-- Upgraded with 'server-time' class for JS translation -->
+                            Claimed on: <span class="server-time">{{ claim['created_at'] }}</span>
                         </p>
                     </div>
 
@@ -152,4 +154,66 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- ============================================== -->
+<!-- JAVASCRIPT FIXES FOR TIMERS & UTC TIMEZONES    -->
+<!-- ============================================== -->
+<script>
+// 1. Live Countdown Timer Script
+function updateTimers() {
+    const timers = document.querySelectorAll('.countdown-timer');
+    const now = new Date().getTime();
+
+    timers.forEach(timer => {
+        const expiryString = timer.getAttribute('data-expiry');
+        if (!expiryString) return;
+
+        const expiryDate = new Date(expiryString).getTime();
+        const distance = expiryDate - now;
+
+        if (distance < 0) {
+            timer.innerHTML = "⚠️ EXPIRED";
+            timer.className = "countdown-timer badge bg-danger text-white";
+        } else {
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            timer.innerHTML = `⏳ Expires in ${hours}h ${minutes}m`;
+        }
+    });
+}
+
+// Run timer immediately, then tick every 60 seconds
+updateTimers();
+setInterval(updateTimers, 60000);
+
+// 2. UTC to Local Browser Time Converter
+document.addEventListener("DOMContentLoaded", function() {
+    const timeElements = document.querySelectorAll('.server-time');
+    
+    timeElements.forEach(el => {
+        let dbTime = el.innerText.trim();
+        if (dbTime && dbTime !== 'None') {
+            // Force the browser to read the database string as UTC by adding 'Z'
+            let utcString = dbTime.replace(' ', 'T');
+            if (!utcString.endsWith('Z')) {
+                utcString += 'Z';
+            }
+            
+            // Convert to user's exact local time (e.g., IST)
+            const localDate = new Date(utcString);
+            
+            if (!isNaN(localDate)) {
+                const yyyy = localDate.getFullYear();
+                const mm = String(localDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(localDate.getDate()).padStart(2, '0');
+                const hh = String(localDate.getHours()).padStart(2, '0');
+                const min = String(localDate.getMinutes()).padStart(2, '0');
+                
+                // Print the clean, formatted local time
+                el.innerText = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
