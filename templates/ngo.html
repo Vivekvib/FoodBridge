@@ -1,41 +1,45 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Top Bar: Title & Live Filter Search -->
-    <div class="row mb-4 align-items-center">
-        <div class="col-md-6">
-            <h2 class="fw-bold text-success">📍 Live Donation Feed</h2>
-            <small class="text-muted">Rescue food using full or partial split-claiming</small>
-        </div>
-        <div class="col-md-6">
-            <input type="text" id="donationSearch" class="form-control form-control-lg shadow-sm" placeholder="🔍 Filter by food item or restaurant...">
-        </div>
-    </div>
+<div class="container-fluid mt-4">
+    <div class="row">
+        
+        <!-- ========================================== -->
+        <!-- LEFT COLUMN: LIVE DONATION FEED (col-7)    -->
+        <!-- ========================================== -->
+        <div class="col-md-7 mb-4">
+            
+            <!-- Top Bar: Title & Search -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="fw-bold text-success mb-0">📍 Live Donation Feed</h2>
+                    <small class="text-muted">Rescue food using full or partial split-claiming</small>
+                </div>
+            </div>
+            
+            <input type="text" id="donationSearch" class="form-control form-control-lg shadow-sm mb-4" placeholder="🔍 Filter by food item or restaurant...">
 
-    <!-- Active Food Rescue Feed -->
-    {% if not donations %}
-        <div class="alert alert-info p-4 text-center shadow-sm">
-            <h4>No active donations at the moment.</h4>
-            <p class="mb-0">Please check back later or refresh the page.</p>
-        </div>
-    {% else %}
-        <div class="row" id="donationGrid">
-            {% for donation in donations %}
-            <div class="col-md-6 mb-4 donation-col">
-                <div class="card h-100 shadow-sm donation-card border-start border-success border-4">
-                    
-                    <!-- Card Header: Organization & Category Badge -->
-                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="badge bg-light text-dark border me-1">{{ donation['category'] }}</span>
-                            <span class="fw-bold text-success">🏢 {{ donation['org_name'] }}</span>
+            <!-- Active Food Rescue Feed -->
+            {% if not donations %}
+                <div class="alert alert-info p-4 text-center shadow-sm">
+                    <h4>No active donations at the moment.</h4>
+                    <p class="mb-0">Please check back later or refresh the page.</p>
+                </div>
+            {% else %}
+                <div id="donationGrid">
+                    {% for donation in donations %}
+                    <div class="card mb-4 shadow-sm donation-card border-start border-success border-4">
+                        
+                        <!-- Card Header: Organization & Category Badge -->
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-light text-dark border me-1">{{ donation['category'] }}</span>
+                                <span class="fw-bold text-success">🏢 {{ donation['org_name'] }}</span>
+                            </div>
+                            <small class="text-muted">#{{ donation['id'] }}</small>
                         </div>
-                        <small class="text-muted">#{{ donation['id'] }}</small>
-                    </div>
 
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div>
+                        <div class="card-body">
                             <!-- Title & Total Available Quantity -->
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h4 class="card-title text-dark mb-0">{{ donation['food_item'] }}</h4>
@@ -73,85 +77,87 @@
                                     Calculating timer...
                                 </span>
                             </div>
+
+                            <!-- SMART CLAIM BAR (Split-Claiming Logic) -->
+                            <form action="{{ url_for('claim', id=donation['id']) }}" method="POST" class="mt-3 pt-3 border-top">
+                                <label class="form-label fw-semibold mb-1" style="font-size: 0.85rem;">
+                                    🤝 Smart Claim Bar (Select Quantity to Rescue)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">Qty</span>
+                                    <input type="number" name="claim_quantity" class="form-control" 
+                                           min="1" max="{{ donation['quantity'] }}" value="{{ donation['quantity'] }}" required>
+                                    <span class="input-group-text bg-light">{{ donation['unit'] }}</span>
+                                    <button type="submit" class="btn btn-success fw-bold px-3 btn-claim">
+                                        Claim Food 🚀
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                    Tip: Claiming less than the total leaves the remaining balance live for other NGOs!
+                                </small>
+                            </form>
                         </div>
 
-                        <!-- SMART CLAIM BAR (Split-Claiming Logic) -->
-                        <form action="{{ url_for('claim', id=donation['id']) }}" method="POST" class="mt-auto pt-2 border-top">
-                            <label class="form-label fw-semibold mb-1" style="font-size: 0.85rem;">
-                                🤝 Smart Claim Bar (Select Quantity to Rescue)
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light">Qty</span>
-                                <input type="number" name="claim_quantity" class="form-control" 
-                                       min="1" max="{{ donation['quantity'] }}" value="{{ donation['quantity'] }}" required>
-                                <span class="input-group-text bg-light">{{ donation['unit'] }}</span>
-                                <button type="submit" class="btn btn-success fw-bold px-3 btn-claim">
-                                    Claim Food 🚀
-                                </button>
+                        <div class="card-footer text-muted small d-flex justify-content-between">
+                            <span>Posted: <span class="server-time">{{ donation['created_at'] }}</span></span>
+                            <span class="text-success fw-semibold">Live</span>
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ========================================== -->
+        <!-- RIGHT COLUMN: MY CLAIMED DONATIONS (col-5) -->
+        <!-- ========================================== -->
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center py-3">
+                    <span class="mb-0 fs-5">🎒 My Claimed Donations</span>
+                    <span class="badge bg-light text-primary fs-6">{{ my_claims|length }}</span>
+                </div>
+                
+                <div class="card-body p-0">
+                    {% if my_claims and my_claims|length > 0 %}
+                        <div class="list-group list-group-flush">
+                            {% for claim in my_claims %}
+                            <div class="list-group-item p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h5 class="card-title text-primary mb-0 fw-bold">{{ claim['food_item'] }}</h5>
+                                        <span class="badge bg-primary mt-1">{{ claim['quantity'] }} {{ claim['unit'] }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-light p-2 rounded mb-3 text-muted" style="font-size: 0.85rem;">
+                                    <div><strong>Donor:</strong> {{ claim['org_name'] }}</div>
+                                    <div><strong>📍 Pickup:</strong> {{ claim['address'] }}</div>
+                                    <div><strong>📦 Packaging:</strong> {{ claim['packaging_note'] }}</div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        Claimed on:<br><span class="server-time">{{ claim['created_at'] }}</span>
+                                    </small>
+                                    <a href="{{ url_for('chat', donation_id=claim['id']) }}" class="btn btn-sm btn-primary fw-bold">
+                                        💬 Chat with Donor
+                                    </a>
+                                </div>
                             </div>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
-                                Tip: Claiming less than the total leaves the remaining balance live for other NGOs!
-                            </small>
-                        </form>
-
-                    </div>
-
-                    <div class="card-footer text-muted small d-flex justify-content-between">
-                        <!-- Upgraded with 'server-time' class for JS translation -->
-                        <span>Posted: <span class="server-time">{{ donation['created_at'] }}</span></span>
-                        <span class="text-success fw-semibold">Live</span>
-                    </div>
-
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <hr class="my-5">
-
-    <!-- Rescued Claims & Chat Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="text-primary mb-0">🎒 My Claimed Donations (Click to Chat)</h3>
-        <span class="badge bg-primary fs-6">Total Claims: {{ my_claims|length }}</span>
-    </div>
-
-    <div class="row">
-        {% for claim in my_claims %}
-        <div class="col-md-4 mb-3">
-            <div class="card border-primary shadow-sm h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title text-primary mb-0">{{ claim['food_item'] }}</h5>
-                            <span class="badge bg-primary">{{ claim['quantity'] }} {{ claim['unit'] }}</span>
+                            {% endfor %}
                         </div>
-                        
-                        <div class="bg-light p-2 rounded mb-3 text-muted" style="font-size: 0.85rem;">
-                            <div><strong>Donor:</strong> {{ claim['org_name'] }}</div>
-                            <div><strong>📍 Pickup:</strong> {{ claim['address'] }}</div>
-                            <div><strong>📦 Packaging:</strong> {{ claim['packaging_note'] }}</div>
+                    {% else %}
+                        <div class="p-5 text-center text-muted">
+                            <h5>No Claims Yet</h5>
+                            <p class="mb-0 small">Once you claim full or partial quantities from the Live Feed, they will appear here for coordination!</p>
                         </div>
-
-                        <p class="card-text small text-muted mb-3">
-                            <!-- Upgraded with 'server-time' class for JS translation -->
-                            Claimed on: <span class="server-time">{{ claim['created_at'] }}</span>
-                        </p>
-                    </div>
-
-                    <a href="{{ url_for('chat', donation_id=claim['id']) }}" class="btn btn-primary w-100 mt-auto fw-bold">
-                        💬 Open Chat with Donor
-                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="col-12">
-            <div class="alert alert-light border text-center p-4 text-muted">
-                You haven't claimed any donations yet. Once you claim full or partial quantities above, they will appear here for coordination!
-            </div>
-        </div>
-        {% endfor %}
+
     </div>
 </div>
 
@@ -199,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 utcString += 'Z';
             }
             
-            // Convert to user's exact local time (e.g., IST)
+            // Convert to user's exact local time
             const localDate = new Date(utcString);
             
             if (!isNaN(localDate)) {
