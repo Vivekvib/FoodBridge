@@ -1,39 +1,38 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
-<div class="container mt-4" style="max-width: 700px;">
-    <h3>🔔 Your Notifications</h3>
-    <div class="list-group mt-3 shadow-sm">
-        {% for notif in notifs %}
-        <a href="{{ url_for('read_notification', notif_id=notif['id']) }}" 
-           class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3
-                  {% if notif['is_read'] == 0 %}bg-light border-start border-4 border-primary fw-bold{% endif %}">
-            
-            <div style="font-size: 1.5rem;">
-                {% if notif['type'] == 'chat' %} 💬
-                {% elif notif['type'] == 'claim' %} 🎉
-                {% elif notif['type'] == 'new_donation' %} 🍱
-                {% else %} ℹ️ {% endif %}
-            </div>
-            
-            <div class="w-100">
-                <div class="d-flex justify-content-between">
-                    <h6 class="mb-1">
-                        {% if notif['type'] == 'chat' %} New Message
-                        {% elif notif['type'] == 'claim' %} Donation Claimed!
-                        {% elif notif['type'] == 'new_donation' %} New Food Available
-                        {% else %} System Alert {% endif %}
-                    </h6>
-                    <small class="text-muted">{{ notif['created_at'] }}</small>
-                </div>
-                <p class="mb-0 opacity-75">{{ notif['message'] }}</p>
-            </div>
+<div class="container mt-4">
+  <h2 class="mb-4">Your Notifications</h2>
+
+  {% if notifs %}
+    <div class="list-group">
+      {% for notif in notifs %}
+        <a href="{{ url_for('read_notification', notif_id=notif.id) }}" 
+           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if notif.is_read == 0 %}list-group-item-primary fw-bold{% endif %}">
+          
+          <div>
+            <!-- Notification Icon by Type -->
+            {% if notif.type == 'new_donation' %}
+              <span class="badge bg-success me-2">New Donation</span>
+            {% elif notif.type == 'claim' %}
+              <span class="badge bg-warning text-dark me-2">Claimed</span>
+            {% elif notif.type == 'chat' %}
+              <span class="badge bg-info text-dark me-2">Message</span>
+            {% endif %}
+
+            <span>{{ notif.message }}</span>
+          </div>
+
+          <!-- Safe timestamp formatting (first 16 chars: YYYY-MM-DD HH:MM) -->
+          <small class="text-muted">
+            {{ (notif.created_at | string)[:16] if notif.created_at else '' }}
+          </small>
         </a>
-        {% else %}
-        <div class="text-center text-muted py-5">
-            <h4>No notifications yet.</h4>
-            <p>When something happens, it will appear here.</p>
-        </div>
-        {% endfor %}
+      {% endfor %}
     </div>
+  {% else %}
+    <div class="alert alert-light text-center" role="alert">
+      No notifications yet. You're all caught up!
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

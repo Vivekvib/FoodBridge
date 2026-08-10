@@ -1,58 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodBridge - Final Project</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodBridge</title>
+
+  <!-- Bootstrap 5 CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Fonts: Fraunces (brand/display) + Public Sans (UI body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ============================================================ -->
+  <!-- DESIGN TOKENS & CORE STYLING                                  -->
+  <!-- ============================================================ -->
+  <style>
+    :root {
+      /* --- Brand palette --- */
+      --forest:        #1B4332;   /* deep forest green — nav, trust */
+      --forest-dark:    #12302300;
+      --forest-deep:    #0F2A20;  /* darker shade for depth/gradients */
+      --rescue:         #FF6B35;  /* warm rescue-orange — donor / primary actions */
+      --rescue-dark:    #E4551F;
+      --fresh:          #52B788;  /* fresh green — NGO / success / live */
+      --fresh-dark:     #3E9C6E;
+      --bg:             #FAF7F2;  /* warm paper background */
+      --surface:        #FFFFFF;
+      --ink:            #1C1917;
+      --muted:          #6B7280;
+      --hairline:       #E7E2D9;
+
+      /* Map onto Bootstrap variables so existing btn-primary/btn-success etc. still work */
+      --bs-primary: var(--rescue);
+      --bs-success: var(--fresh);
+      --bs-body-bg: var(--bg);
+      --bs-body-color: var(--ink);
+      --bs-body-font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    main { flex: 1; }
+
+    /* ============================================================ */
+    /* NAVBAR — always visible, sticky, quietly confident            */
+    /* ============================================================ */
+    .navbar {
+      background: linear-gradient(180deg, var(--forest) 0%, #17392A 100%);
+      padding-top: 0.85rem;
+      padding-bottom: 0.85rem;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 6px 16px rgba(0,0,0,0.10);
+    }
+
+    /* Signature element: a bridge gradient — donor-orange to NGO-green —
+       a literal visual "bridge" running under every page. */
+    .navbar-bridge-rule {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--rescue) 0%, var(--rescue) 45%, var(--fresh) 55%, var(--fresh) 100%);
+    }
+
+    .navbar-brand {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 1.5rem;
+      letter-spacing: -0.01em;
+      color: #FFFFFF !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Small pulsing "live" dot beside the wordmark — echoes the
+       app's live donation feed instead of decorating for its own sake. */
+    .brand-pulse {
+      position: relative;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--fresh);
+      flex-shrink: 0;
+    }
+    .brand-pulse::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--fresh);
+      animation: pulse-ring 2.2s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);   opacity: 0.65; }
+      100% { transform: scale(3);   opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-pulse::after { animation: none; }
+    }
+
+    .navbar-nav .nav-link {
+      color: rgba(255,255,255,0.82);
+      font-weight: 500;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:focus {
+      color: #fff;
+      background-color: rgba(255,255,255,0.08);
+    }
+    .navbar-nav .nav-link.active {
+      color: #fff;
+      background-color: rgba(255,255,255,0.14);
+    }
+
+    .navbar-text strong.text-warning {
+      color: #FFC98B !important;
+      font-weight: 600;
+    }
+
+    .navbar .btn-outline-light {
+      border-color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+    .navbar .btn-outline-light:hover {
+      background-color: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.7);
+    }
+
+    /* Role badge — quieter than a generic grey pill */
+    .role-badge {
+      background-color: rgba(255,255,255,0.14);
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: 0.68rem;
+    }
+
+    /* ============================================================ */
+    /* NOTIFICATION BELL                                             */
+    /* ============================================================ */
+    #notif-badge {
+      font-size: 0.68rem;
+      transform: translate(-2px, -2px);
+    }
+
+    .dropdown-menu {
+      border-radius: 14px;
+      overflow: hidden;
+      padding: 0;
+    }
+    .dropdown-menu .dropdown-header {
+      background-color: var(--bg);
+      color: var(--ink) !important;
+      margin: 0;
+      padding: 0.9rem 1rem 0.7rem;
+    }
+    .dropdown-item.bg-light {
+      background-color: #FFF4EC !important;
+      border-left: 3px solid var(--rescue);
+    }
+    .dropdown-item:hover {
+      background-color: #F5F1EA;
+    }
+
+    /* ============================================================ */
+    /* BUTTONS & CARDS                                               */
+    /* ============================================================ */
+    .btn { font-weight: 600; }
+    .btn-primary { background-color: var(--rescue); border-color: var(--rescue); color: #fff; }
+    .btn-primary:hover { background-color: var(--rescue-dark); border-color: var(--rescue-dark); color: #fff; }
+    .text-primary { color: var(--rescue) !important; }
+    .bg-primary { background-color: var(--rescue) !important; }
+
+    .btn-success { background-color: var(--fresh); border-color: var(--fresh); color: #fff; }
+    .btn-success:hover { background-color: var(--fresh-dark); border-color: var(--fresh-dark); color: #fff; }
+    .text-success { color: var(--fresh-dark) !important; }
+
+    .card {
+      border-radius: 14px;
+      border: 1px solid var(--hairline);
+      box-shadow: 0 4px 14px rgba(27, 67, 50, 0.06);
+      background-color: var(--surface);
+    }
+
+    .badge { padding: 0.45em 0.75em; font-weight: 600; letter-spacing: 0.01em; }
+
+    /* Flash messages — rounded but not pill-shaped (pills read as "toast",
+       these persist on the page so give them a calmer shape) */
+    .alert {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* ============================================================ */
+    /* FOOTER                                                        */
+    /* ============================================================ */
+    footer {
+      background: var(--forest-deep);
+      border-top: 3px solid transparent;
+      border-image: linear-gradient(90deg, var(--rescue), var(--fresh)) 1;
+    }
+    footer small { color: rgba(255,255,255,0.55); letter-spacing: 0.01em; }
+  </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">🌱 FoodBridge</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-nav ms-auto align-items-center gap-3">
-                {% if session.get('user_id') %}
-                    <a href="{{ url_for('notifications') }}" class="btn btn-outline-light position-relative border-0">
-                        🔔
-                        {% if notif_count > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            {{ notif_count }}
-                        </span>
-                        {% endif %}
-                    </a>
-                    <span class="text-light small opacity-75">|</span>
-                    <span class="text-light small fw-bold">{{ session.username }}</span>
-                    <a class="nav-link text-warning small" href="{{ url_for('logout') }}">Logout</a>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <span class="brand-pulse" aria-hidden="true"></span>
+        FoodBridge
+      </a>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+
+        <!-- Left Side Navigation Links -->
+        <ul class="navbar-nav me-auto align-items-lg-center">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+          </li>
+
+          {% if session.get('user_id') %}
+            <!-- Role-Specific Dashboard Link -->
+            {% if session.get('role') == 'donor' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('donor') }}">Donor Dashboard</a>
+              </li>
+            {% elif session.get('role') == 'ngo' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('ngo') }}">Available Donations</a>
+              </li>
+            {% endif %}
+
+            <!-- My Profile Link -->
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('profile') }}">My Profile</a>
+            </li>
+
+            <!-- Vertical Dropdown Notification Bell -->
+            <li class="nav-item dropdown ms-lg-2">
+              <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                🔔 <span class="d-lg-none ms-1">Alerts</span>
+                <span id="notif-badge" class="badge bg-danger ms-1 rounded-pill shadow-sm {% if notif_count == 0 %}d-none{% endif %}">
+                  {{ notif_count }}
+                </span>
+              </a>
+
+              <!-- Dropdown Menu -->
+              <ul class="dropdown-menu dropdown-menu-end shadow-lg mt-2" aria-labelledby="notifDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                <li><h6 class="dropdown-header fw-bold fs-6 border-bottom">📬 Recent Alerts</h6></li>
+
+                {% if recent_notifs %}
+                  {% for n in recent_notifs %}
+                    <li>
+                      <a class="dropdown-item text-wrap border-bottom py-3 {% if n.is_read == 0 %}bg-light fw-semibold{% endif %}" href="{{ url_for('read_notification', notif_id=n.id) }}">
+                        <div class="d-block mb-1" style="font-size: 0.9rem;">{{ n.message }}</div>
+                        <small class="text-muted" style="font-size: 0.75rem;">🕒 <span class="server-time">{{ n.created_at }}</span></small>
+                      </a>
+                    </li>
+                  {% endfor %}
                 {% else %}
-                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                    <a class="btn btn-light text-success fw-bold" href="{{ url_for('register') }}">Register</a>
+                  <li><span class="dropdown-item text-muted text-center py-4">No new alerts right now! 😴</span></li>
                 {% endif %}
-            </div>
-        </div>
-    </nav>
 
-    <div class="container-fluid p-0">
-         <div class="container">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
+                <li>
+                  <a class="dropdown-item text-center text-primary fw-bold py-2" href="{{ url_for('notifications') }}">
+                    View All Inbox →
+                  </a>
+                </li>
+              </ul>
+            </li>
+          {% endif %}
+        </ul>
 
-        {% block content %}{% endblock %}
+        <!-- Right Side Auth Navigation Links -->
+        <ul class="navbar-nav ms-auto align-items-lg-center mt-3 mt-lg-0">
+          {% if session.get('user_id') %}
+            <li class="nav-item me-3 mb-2 mb-lg-0">
+              <span class="navbar-text text-light">
+                Signed in as <strong class="text-warning">{{ session.get('username') }}</strong>
+                <span class="badge role-badge ms-1 rounded-pill">{{ session.get('role')|upper }}</span>
+              </span>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{{ url_for('logout') }}">Logout</a>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-primary btn-sm ms-lg-2 rounded-pill px-3" href="{{ url_for('register') }}">Register</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
+  </nav>
+  <div class="navbar-bridge-rule"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <!-- Main Application Content & Flash Messages -->
+  <main class="container mt-4 mb-5">
+
+    <!-- Flask Flashed Messages Banner -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-4">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Individual Page Content -->
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-white text-center py-3 mt-auto">
+    <div class="container">
+      <small>&copy; 2026 FoodBridge. Reducing food waste, feeding communities.</small>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5 JS Bundle CDN (Required for Dropdowns!) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- WhatsApp-Style Live Notification Polling Script -->
+  <script>
+    function updateNotificationBadge() {
+      fetch('/api/notifications/count')
+        .then(response => {
+          if (!response.ok) throw new Error('Not logged in or server error');
+          return response.json();
+        })
+        .then(data => {
+          const badge = document.getElementById('notif-badge');
+          if (badge) {
+            if (data.count > 0) {
+              badge.textContent = data.count;
+              badge.classList.remove('d-none');
+            } else {
+              badge.textContent = '0';
+              badge.classList.add('d-none');
+            }
+          }
+        })
+        .catch(err => {
+          console.debug('Notification poll skip:', err.message);
+        });
+    }
+
+    setInterval(updateNotificationBadge, 5000);
+  </script>
 </body>
 </html>
