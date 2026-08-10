@@ -106,14 +106,23 @@ def execute_query(query, params=(), fetchone=False, fetchall=False, commit=False
 @app.context_processor
 def inject_notifications():
     if 'user_id' in session:
-        row = execute_query(
-            'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0', 
-            (session['user_id'],), 
-            fetchone=True
-        )
+        # 1. Get the unread count for the badge
+        row = execute_query('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0', (session['user_id'],), fetchone=True)
         count = row['count'] if row else 0
-        return dict(notif_count=count)
-    return dict(notif_count=0)
+        
+        # 2. Get the 5 most recent notifications for the dropdown
+        recent = execute_query('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 5', (session['user_id'],), fetchall=True)
+        safe_recent = []
+        if recent:
+            for n in recent:
+                n_dict = dict(n)
+                if 'created_at' in n_dict and n_dict['created_at']:
+                    n_dict['created_at'] = str(n_dict['created_at'])
+                safe_recent.append(n_dict)
+                
+        return dict(notif_count=count, recent_notifs=safe_recent)
+        
+    return dict(notif_count=0, recent_notifs=[])
 
 def login_required(f):
     @wraps(f)
