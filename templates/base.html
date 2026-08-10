@@ -15,8 +15,8 @@
       --bs-primary: #FF7043; 
       /* Fresh Vibrant Green for Success */
       --bs-success: #2ECA6A; 
-      /* Soft Off-White Background */
-      --bs-body-bg: #F8F9FA;
+      /* NEW: A deeper app-style background so the white cards pop! */
+      --bs-body-bg: #F0F2F5;
     }
     
     body {
@@ -31,8 +31,23 @@
       flex: 1; /* Pushes footer to the bottom */
     }
     
-    .navbar { background-color: #2C3E50 !important; /* Elegant dark slate */ }
+    /* ======================================================== */
+    /* THE INVISIBLE / HOVER REVEAL NAVBAR EFFECT               */
+    /* ======================================================== */
+    .navbar { 
+      background-color: #2C3E50 !important; 
+      /* Make it almost completely invisible by default */
+      opacity: 0.10; 
+      /* Smoothly animate the fade-in effect over 0.4 seconds */
+      transition: opacity 0.4s ease-in-out; 
+    }
     
+    /* Spring back to 100% visible when hovered or clicked */
+    .navbar:hover, .navbar:focus-within {
+      opacity: 1;
+    }
+    /* ======================================================== */
+
     /* Custom Primary Button Colors */
     .btn-primary { background-color: var(--bs-primary); border-color: var(--bs-primary); color: white;}
     .btn-primary:hover { background-color: #F4511E; border-color: #F4511E; color: white;}
@@ -85,7 +100,7 @@
               <a class="nav-link" href="{{ url_for('profile') }}">👤 My Profile</a>
             </li>
 
-            <!-- NEW: Vertical Dropdown Notification Bell -->
+            <!-- Vertical Dropdown Notification Bell -->
             <li class="nav-item dropdown ms-lg-2">
               <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 🔔 <span class="d-lg-none ms-1">Alerts</span>
@@ -198,12 +213,10 @@
           }
         })
         .catch(err => {
-          // Silently ignore polling errors when logged out
           console.debug('Notification poll skip:', err.message);
         });
     }
 
-    // Poll backend every 5 seconds for live badge updates
     setInterval(updateNotificationBadge, 5000);
   </script>
 </body>
