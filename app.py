@@ -33,29 +33,40 @@ def init_db():
     cursor.execute(schema_sql)
     conn.commit()
 
-    # 2. Second, safely attach new columns to existing production tables
-    alter_queries = [
+    # 2. Safely attach new columns to existing donations table
+    donations_alter = [
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'Cooked Veg';",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS unit VARCHAR(30) DEFAULT 'Servings';",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS packaging_note VARCHAR(100) DEFAULT 'Not specified';",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS address TEXT DEFAULT 'Address not provided';",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION NULL;",
         "ALTER TABLE donations ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION NULL;",
-        # Safely convert quantity to INTEGER if it was previously VARCHAR/TEXT
         "ALTER TABLE donations ALTER COLUMN quantity TYPE INTEGER USING (COALESCE(NULLIF(REGEXP_REPLACE(quantity::text, '[^0-9]', '', 'g'), ''), '0')::integer);"
     ]
-    
-    for q in alter_queries:
+    for q in donations_alter:
         try:
             cursor.execute(q)
             conn.commit()
         except Exception:
-            # Rollback transaction block if a specific ALTER fails so the loop continues
+            conn.rollback()
+
+    # 3. NEW: Safely attach Profile & Verification columns to the Users table
+    users_alter = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS default_address TEXT;",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS description TEXT;",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified INTEGER DEFAULT 0;"
+    ]
+    for q in users_alter:
+        try:
+            cursor.execute(q)
+            conn.commit()
+        except Exception:
             conn.rollback()
             
     cursor.close()
     conn.close()
 
+    
 def execute_query(query, params=(), fetchone=False, fetchall=False, commit=False, return_id=False):
     """
     Helper function to abstract SQL query execution across SQLite and PostgreSQL.
@@ -155,6 +166,32 @@ def logout():
 @app.route('/')
 def index(): 
     return render_template('index.html')
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        # Grab the updated info from the form
+        phone = request.form.get('phone')
+        default_address = request.form.get('default_address')
+        description = request.form.get('description')
+        
+        # Update the user's record in the database
+        execute_query(
+            "UPDATE users SET phone = ?, default_address = ?, description = ? WHERE id = ?",
+            (phone, default_address, description, session['user_id']),
+            commit=True
+        )
+        flash("Profile updated successfully! ✅", "success")
+        return redirect(url_for('profile'))
+
+    # GET request: fetch the user's current data to display in the form
+    user = execute_query(
+        "SELECT * FROM users WHERE id = ?", 
+        (session['user_id'],), 
+        fetchone=True
+    )
+    return render_template('profile.html', user=user)
 
 @app.route('/donor', methods=['GET', 'POST'])
 @login_required

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      
+      <div class="card shadow-sm border-0 border-top border-primary border-4">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+          <h4 class="mb-0 text-primary fw-bold">👤 My Profile Settings</h4>
+          
+          <!-- Dynamic Verification Badge -->
+          {% if user['is_verified'] %}
+            <span class="badge bg-success fs-6 shadow-sm">✅ Verified Account</span>
+          {% else %}
+            <span class="badge bg-warning text-dark fs-6 shadow-sm">⏳ Pending Verification</span>
+          {% endif %}
+        </div>
+        
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('profile') }}">
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Username / Organization Name</label>
+                <!-- Username is locked/disabled because it's used for login -->
+                <input type="text" class="form-control bg-light" value="{{ user['username'] }}" disabled>
+                <small class="text-muted">Role: <span class="text-capitalize">{{ user['role'] }}</span></small>
+              </div>
+              <div class="col-md-6">
+                <label for="phone" class="form-label fw-semibold">Contact Phone Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="phone" name="phone" 
+                       value="{{ user['phone'] if user['phone'] else '' }}" 
+                       placeholder="e.g., 9876543210" required>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="default_address" class="form-label fw-semibold">Default Pickup/Drop-off Address</label>
+              <textarea class="form-control" id="default_address" name="default_address" rows="2" 
+                        placeholder="Enter your main address here so we can auto-fill it for you later...">{{ user['default_address'] if user['default_address'] else '' }}</textarea>
+              <small class="text-muted">Setting this saves you from typing your address every time you post or claim food!</small>
+            </div>
+
+            <div class="mb-4">
+              <label for="description" class="form-label fw-semibold">Bio / Organization Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3" 
+                        placeholder="Tell the community about your mission, or enter your NGO Registration Number here...">{{ user['description'] if user['description'] else '' }}</textarea>
+            </div>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                💾 Save Profile Changes
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+{% endblock %}
