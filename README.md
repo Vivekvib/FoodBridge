@@ -66,6 +66,7 @@ FoodBridge/
 ├── schema.sql               # Table definitions + safe ALTER TABLE migrations + demo seed rows
 ├── requirements.txt          # Python dependencies
 ├── foodbridge.db             # Local SQLite database (auto-created on first run)
+├── README.md               # Readme file to look at before using it
 ├── static/
 │   ├── style.css              # Legacy stylesheet (currently unused — see note above)
 │   └── scipt.js                # Legacy script (currently unused — see note above)
